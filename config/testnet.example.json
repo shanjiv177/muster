@@ -1,0 +1,23 @@
+{
+  "_comment": "Example only. scripts/bootstrap.ts writes config/testnet.json (git-ignored) with real ids.",
+  "network": "testnet",
+  "factory": "sputnik-v2.testnet",
+  "dao": "<community>.sputnik-v2.testnet",
+  "impactTier": "tier.<organiser>.testnet",
+  "token": "<test-usdc>.testnet",
+  "policy": {
+    "bountyBondNear": "0.5",
+    "proposalBondNear": "0",
+    "bountyForgivenessPeriodSeconds": 86400,
+    "proposalPeriodSeconds": 604800,
+    "bountyDoneThresholdWeight": 1,
+    "addBountyThresholdRatio": [1, 2]
+  },
+  "checkIn": {
+    "rotateSeconds": 30,
+    "windowMinutes": 2
+  },
+  "tier": {
+    "minRecord": 1
+  }
+}

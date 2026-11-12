@@ -1,0 +1,25 @@
+# Dependencies and build output (never commit these)
+node_modules/
+target/
+dist/
+build/
+.vite/
+*.wasm
+!contracts/**/res/*.wasm
+
+# Secrets and local config
+.env
+.env.*
+!.env.example
+config/*.local.json
+config/testnet.json
+config/mainnet.json
+*.key
+*.pem
+.near-credentials/
+
+# Editor and OS
+.DS_Store
+.idea/
+.vscode/
+*.log
