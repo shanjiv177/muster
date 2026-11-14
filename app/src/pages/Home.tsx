@@ -97,18 +97,18 @@ export default function Home() {
       <section className="block">
         <h2>How it works</h2>
         <ol className="how">
-          <li><span className="num">1</span><h3>RSVP</h3><p>Lock a {d ? nearStr(d.bond, 1) : "0.5"} NEAR bond.</p></li>
-          <li><span className="num">2</span><h3>Show up</h3><p>Get scanned in and out.</p></li>
-          <li><span className="num">3</span><h3>Get paid</h3><p>The DAO settles, on chain.</p></li>
+          <li><h3>RSVP</h3><p>Lock a {d ? nearStr(d.bond, 1) : "0.5"} NEAR bond.</p></li>
+          <li><h3>Show up</h3><p>Get scanned in and out.</p></li>
+          <li><h3>Get paid</h3><p>The DAO settles, on chain.</p></li>
         </ol>
       </section>
 
       <section className="block">
         <h2>Every RSVP ends one of three ways</h2>
         <div className="outcomes">
-          <div className="paid"><span className="dot" /><h3>Showed up</h3><p>Stipend paid, bond back.</p></div>
-          <div><span className="dot" /><h3>First shift</h3><p>One council vote, then automatic.</p></div>
-          <div className="kept"><span className="dot" /><h3>No-show</h3><p>Bond stays with the community.</p></div>
+          <div className="paid"><h3>Showed up</h3><p>Stipend paid, bond back.</p></div>
+          <div><h3>First shift</h3><p>One council vote, then automatic.</p></div>
+          <div className="kept"><h3>No-show</h3><p>Bond stays with the community.</p></div>
         </div>
       </section>
 
