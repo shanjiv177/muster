@@ -2,11 +2,14 @@
 
 **Volunteer hours anyone can verify, and RSVPs that cost a no-show their bond, run entirely by your community's own Sputnik DAO.**
 
-Built at NEAR HACKATHON for the `social` track. Everything below runs on **NEAR testnet** today:
+Built at NEAR HACKATHON for the `social` track. **Demo video (3 min): [NEAR-MUSTER.mp4](NEAR-MUSTER.mp4).**
+
+Everything below runs on **NEAR testnet** today:
 - Community DAO: [`muster-juhu.sputnikv2.testnet`](https://testnet.nearblocks.io/address/muster-juhu.sputnikv2.testnet). It is stock Sputnik v2 from the `sputnikv2.testnet` factory, with factory auto-update turned off.
 - Rules contract: [`v2.muster-tier.testnet`](https://testnet.nearblocks.io/address/v2.muster-tier.testnet), Rust, with zero access keys. It replaced v1 through a council vote that moved the DAO's `tier` role, which is the only way it can be upgraded.
 - App: **https://shanjiv177.github.io/muster/**. React, reading the chain directly with no backend.
-- NEP-366 relayer: **https://rupee-rail.indiasouthcentral.cloudapp.azure.com/muster-relay/health**. It pays gas for check-ins, and never for bonds.
+- NEP-366 relayer: **https://rupee-rail.indiasouthcentral.cloudapp.azure.com/muster-relay/health**. It pays gas for check-ins, and never for bonds. It also pins campaign details to IPFS.
+- Keeper: runs every minute next to the relayer. It calls `settle` and `credit` with a key that can call only those two methods.
 
 | For a judge, in 2 minutes | |
 |---|---|
@@ -16,6 +19,7 @@ Built at NEAR HACKATHON for the `social` track. Everything below runs on **NEAR 
 | Contract tests | `cd contracts/impact-tier && cargo test` (42 tests) |
 | What Sputnik really does with bonds, tested on testnet | [docs/sputnik-findings.md](docs/sputnik-findings.md) |
 | Every transaction of the end-to-end run | [docs/testnet-run.md](docs/testnet-run.md) |
+| A real wallet run from the live site | [Certificate for `stillcat9564.testnet`](https://shanjiv177.github.io/muster/#/v/stillcat9564.testnet). Shift 15, proposal #61: RSVP from a browser wallet, checked in and out on the live site, approved by a council vote and credited |
 
 ## The problem
 
@@ -117,7 +121,7 @@ To create your own community from scratch, you need testnet accounts in `~/.near
   - a volunteer's first shift still needs a council vote;
   - auto-approval is capped at 0.2 NEAR.
 - **The volunteer needs NEAR for the bond.** By design: in NEP-366 the relayer would pay the bond, so RSVPs are wallet transactions. Gas is ~0.003 NEAR.
-- **Someone has to call `settle`.** Anyone can: the app, the keeper script (`npm run keeper`), or the volunteer.
+- **Someone has to call `settle`.** The hosted keeper does it every minute. Anyone else can too: the app, `npm run keeper`, or the volunteer.
 - **Partial attendance goes to the council.** That covers a check-in without a check-out, and a shift shorter than the minimum. The contract never auto-forfeits a volunteer who checked in.
 - **The door QR can be shared within its 2-minute window.** A volunteer at the venue could send a fresh code to a friend who isn't there. Rotation limits this to a short window, and the organiser-scan mode stays available where that matters.
 - **Not built yet:** near.social posts and a NEAR Intents (1Click) sponsor page. Both are mainnet-only.
