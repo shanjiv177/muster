@@ -96,9 +96,7 @@ export async function lastBountyId(dao: string): Promise<number> {
 }
 
 export async function proposal(dao: string, id: number): Promise<any | null> {
-  try {
-    return await view<any>(dao, "get_proposal", { id });
-  } catch {
-    return null; // removed proposals are deleted from state
-  }
+  // Removed proposals are deleted from state; a range query returns [] instead of panicking.
+  const [p] = await view<any[]>(dao, "get_proposals", { from_index: id, limit: 1 });
+  return p && p.id === id ? p : null;
 }
