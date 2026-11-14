@@ -9,13 +9,16 @@
 //   F  files BountyDone naming B              -> ignored by impact-tier; rejecting it reverts
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { account, balance, call, fmt, link, log, near, sleep, view, type TxResult } from "./lib/near.js";
+import { KeyPair, actions } from "near-api-js";
+import { account, balance, call, fmt, link, log, near, send, sleep, view, type TxResult } from "./lib/near.js";
 import { act, addProposal, lastProposalId, proposal, rsvp } from "./lib/dao.js";
-import { loadConfig, ROOT } from "./lib/config.js";
+import { loadConfig, ROOT, saveKey } from "./lib/config.js";
 import { attest, createCampaign, keeperPass, settle } from "./lib/muster.js";
 
 const cfg = loadConfig();
-const V = cfg.volunteers;
+// A and B must start with no record, so each run makes them fresh sub-accounts of the configured
+// volunteers (r<timestamp>.muster-vol-a.testnet), funded by the parent. C–F reuse their accounts.
+const V: Record<string, string> = { ...cfg.volunteers };
 const rows: { step: string; result: string; tx: string }[] = [];
 let failures = 0;
 
@@ -35,7 +38,19 @@ async function rsvpOf(who: string, bountyId: number) {
   return (await lastProposalId(cfg.dao)) - 1;
 }
 
+async function freshVolunteer(parent: string, fund: string): Promise<string> {
+  const kp = KeyPair.fromRandom("ed25519");
+  const id = `r${Date.now().toString(36)}.${parent}`;
+  saveKey(id, kp);
+  const r = await send(account(parent), id, [actions.createAccount(), actions.transfer(near(fund)), actions.addFullAccessKey(kp.getPublicKey())]);
+  rec(`create fresh volunteer ${id} (${fund} NEAR from ${parent})`, r);
+  if (!r.ok) throw new Error(r.error);
+  return id;
+}
+
 async function main() {
+  V.a = await freshVolunteer(cfg.volunteers.a, "1.5");
+  V.b = await freshVolunteer(cfg.volunteers.b, "0.8");
   const now = Math.floor(Date.now() / 1000);
   const c1 = await createCampaign(cfg, {
     title: "Juhu Beach cleanup (morning)", place: "Juhu Beach, Mumbai",
