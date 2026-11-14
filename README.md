@@ -55,7 +55,7 @@ Built at NEAR HACKATHON for the `social` track. Everything below runs on **NEAR 
 | Do | See |
 |---|---|
 | Open the app's **Proof** page | 7 live PASS checks: stock code hash, auto-update off, a 0-key rules contract, exact role permissions. Below them, scenarios A–F with transaction links |
-| Open **Board** | Treasury, bonded RSVPs, shifts paid, verified hours, no-shows and kept bonds, stipend per verified hour, and the rules contract's vote log |
+| Open the [home page](https://shanjiv177.github.io/muster/) | A real verified shift drawn as a timecard and stamped by the DAO, live totals, and open shifts. **Activity** shows every vote the rules contract cast |
 | Open the certificate for `rmwg629bw.muster-vol-a.testnet` | 2 verified shifts. The first was approved by the council, the second automatically by the rules contract. The chain rebuild shows **match** |
 | Sign in with a testnet wallet, open a campaign, press **RSVP** | One wallet transaction with `bounty_claim` and `bounty_done`. A QR check-in code appears |
 | Sign in as an organiser, open **Organiser check-in**, press **Add check-in key**, then scan or type a volunteer | A FunctionCall key appears on your account (impact-tier, `attest` only). Each scan is an `attest` transaction with no wallet pop-up |

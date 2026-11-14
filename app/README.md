@@ -4,7 +4,8 @@ React + Vite + TypeScript, with NEAR Wallet Selector (MyNearWallet, Meteor). The
 
 | Route | Page |
 |---|---|
-| `#/` | Board: treasury, RSVPs, shifts paid, verified hours, no-shows, stipend per verified hour, the rules contract's vote log |
+| `#/` | Home: a live timecard hero (latest verified shift), how it works, totals, open and past shifts |
+| `#/activity` | Every vote the rules contract cast and every council approval it credited |
 | `#/c/:id` | Campaign: terms, a one-transaction RSVP (claim + done), give up, QR check-in code, RSVP list |
 | `#/organiser/scan/:id` | Organiser: add a FunctionCall check-in key once, then camera or typed check-in/out. Uses the relayer when `VITE_RELAYER_URL` is set |
 | `#/council` | Open shift proposals with attendance badges, spoof warnings, no Reject button; credit approved shifts |
