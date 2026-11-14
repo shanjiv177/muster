@@ -6,5 +6,6 @@ export default defineConfig({
   base: './',
   plugins: [react()],
   server: { fs: { allow: ['..'] } },
-  define: { global: 'globalThis' },
+  resolve: { alias: { buffer: 'buffer/' } },
+  define: { global: 'globalThis', 'process.env': '{}' },
 })
