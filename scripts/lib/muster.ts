@@ -36,7 +36,7 @@ export async function createCampaign(cfg: MusterConfig, o: { title: string; plac
 
 /** The organiser's scoped (FunctionCall-only) key, as created by bootstrap. */
 export function organiserScoped(cfg: MusterConfig): Account {
-  const key = loadNamedKey(`${cfg.organisers[0]}.attest`);
+  const key = loadNamedKey(`${cfg.organisers[0]}.attest.${cfg.impactTier}`);
   if (!key) throw new Error("organiser scoped key missing: run bootstrap");
   return account(cfg.organisers[0], key);
 }

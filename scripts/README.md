@@ -5,7 +5,7 @@ TypeScript with near-api-js 7, run with `tsx`. Keys come from `~/.near-credentia
 | Command | Does |
 |---|---|
 | `npm run probe` | Creates a throwaway DAO and confirms the Sputnik behaviours in `docs/sputnik-findings.md` |
-| `npm run bootstrap` | Creates the community DAO from `sputnikv2.testnet` with Muster's policy, deploys and initialises impact-tier, turns factory auto-update off, and adds the organiser's FunctionCall check-in key. Idempotent |
+| `npm run bootstrap` | (Set `TIER_ID=v<n>.muster-tier.testnet` to upgrade: deploys a new impact-tier and the council votes the DAO's `tier` role over to it.) Creates the community DAO from `sputnikv2.testnet` with Muster's policy, deploys and initialises impact-tier, turns factory auto-update off, and adds the organiser's FunctionCall check-in key. Idempotent |
 | `npm run simulate` | Scenarios A–F end to end on testnet, with real timed attendance (~7 min). Writes `docs/testnet-run.md` and `deployments/testnet.json` |
 | `npm run keeper` | One pass: `settle` every open own-name `BountyDone`, and `credit` council-approved shifts |
 | `npm run verify -- <account>` | Rebuilds a volunteer's hours from chain data and compares them with impact-tier's record |

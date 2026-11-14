@@ -55,6 +55,17 @@ async function main() {
     must(`create DAO ${dao}`, await createDao(account(ORG), DAO_NAME, "Juhu Beach volunteers: verified hours, real RSVPs", policy));
   } else console.log(`skip: ${dao} exists`);
 
+  // 2b. Point the DAO's tier role at this impact-tier (a council vote). This is how the rules
+  // contract is upgraded: deploy v<n+1> on a new account, then the DAO moves the role.
+  const tierRole = (await view<any>(dao, "get_policy")).roles.find((r: any) => r.name === "tier");
+  if (JSON.stringify(tierRole?.kind?.Group ?? []) !== JSON.stringify([TIER])) {
+    const role = { ...tierRole, kind: { Group: [TIER] } };
+    const p = must(`propose moving the tier role to ${TIER}`, await addProposal(account(COUNCIL[0]), dao, `Move the tier role to ${TIER} (impact-tier upgrade)`, {
+      ChangePolicyAddOrUpdateRole: { role },
+    }));
+    for (const c of COUNCIL) must(`${c} approves`, await act(account(c), dao, p.id!, "VoteApprove"));
+  } else console.log(`skip: tier role already ${TIER}`);
+
   // 3. Turn off factory auto-update: only the DAO's own vote can change its code.
   const fi = await view<any>(dao, "get_factory_info");
   if (fi.auto_update) {
@@ -65,13 +76,13 @@ async function main() {
   } else console.log("skip: auto-update already off");
 
   // 4. Organiser's scoped check-in key: FunctionCall-only, impact-tier `attest` only.
-  const keyName = `${ORG}.attest`;
+  const keyName = `${ORG}.attest.${TIER}`;
   let attestPub: string;
   const existing = loadNamedKey(keyName);
   if (!existing) {
     const kp = KeyPair.fromRandom("ed25519");
     attestPub = kp.getPublicKey().toString();
-    const r = await account(ORG).addFunctionCallAccessKey({ publicKey: attestPub, contractId: TIER, methodNames: ["attest"], allowance: near(1) } as any);
+    const r = await account(ORG).addFunctionCallAccessKey({ publicKey: attestPub, contractId: TIER, methodNames: ["attest", "set_door_key"], allowance: near(1) } as any);
     console.log(`ok   organiser scoped key ${attestPub} (tx ${(r as any).transaction.hash})`);
     saveKey(ORG, kp, keyName);
   } else {

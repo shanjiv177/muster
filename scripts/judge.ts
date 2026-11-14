@@ -70,6 +70,12 @@ async function main() {
   const f = await proposal(dao, P.F);
   check("F (spoofed BountyDone for B): never executed, never rejected", f !== null && ["InProgress", "Expired"].includes(f.status) && f.proposer !== f.kind.BountyDone.receiver_id && !out(P.F), { status: f?.status, proposer: f?.proposer });
 
+  if (P.G !== undefined) {
+    const gp = await proposal(dao, P.G);
+    const ga = await view<any>(tier, "attendance_of", { bounty_id: dep.run.bounties.c1, account: dep.volunteers.g });
+    check("G (rotating door QR): self check-in attributed to the organiser, shift paid and credited", gp?.status === "Approved" && ga.in_by === dep.organisers[0] && ga.out_by === dep.organisers[0] && out(P.G) === "credited", { status: gp?.status, in_by: ga.in_by, credited: out(P.G) });
+  }
+
   const who = dep.volunteers.a;
   const rebuilt = await rebuild(dao, tier, who);
   const rec = await view<any>(tier, "record_of", { account: who });

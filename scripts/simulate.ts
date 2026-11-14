@@ -7,13 +7,14 @@
 //   D  gives up within the forgiveness period -> bond refunded
 //   E  RSVPs to the same shift twice          -> the second RSVP reverts atomically (no bond taken)
 //   F  files BountyDone naming B              -> ignored by impact-tier; rejecting it reverts
+//   G  checks in and out with the rotating door QR -> attendance attributed to the organiser; council pays
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { KeyPair, actions } from "near-api-js";
 import { account, balance, call, fmt, link, log, near, send, sleep, view, type TxResult } from "./lib/near.js";
 import { act, addProposal, lastProposalId, proposal, rsvp } from "./lib/dao.js";
 import { loadConfig, ROOT, saveKey } from "./lib/config.js";
-import { attest, createCampaign, keeperPass, settle } from "./lib/muster.js";
+import { attest, createCampaign, keeperPass, organiserScoped, settle } from "./lib/muster.js";
 
 const cfg = loadConfig();
 // A and B must start with no record, so each run makes them fresh sub-accounts of the configured
@@ -51,6 +52,7 @@ async function freshVolunteer(parent: string, fund: string): Promise<string> {
 async function main() {
   V.a = await freshVolunteer(cfg.volunteers.a, "1.5");
   V.b = await freshVolunteer(cfg.volunteers.b, "0.8");
+  V.g = await freshVolunteer(cfg.volunteers.d, "0.8");
   const now = Math.floor(Date.now() / 1000);
   const c1 = await createCampaign(cfg, {
     title: "Juhu Beach cleanup (morning)", place: "Juhu Beach, Mumbai",
@@ -73,6 +75,7 @@ async function main() {
   const cBefore = await balance(V.c);
   const pD = await rsvpOf("d", b1);
   const pE1 = await rsvpOf("e", b1);
+  const pG = await rsvpOf("g", b1);
   const eBefore = await balance(V.e);
   const e2 = rec("E RSVPs to the same shift again", await rsvp(account(V.e), cfg.dao, b1, `RSVP again from ${V.e}`));
   const eDelta = (await balance(V.e)) - eBefore;
@@ -91,12 +94,29 @@ async function main() {
   check("D's proposal still open but has no claim", (await proposal(cfg.dao, pD))?.status === "InProgress");
 
   // Organiser checks people in with the scoped key; a non-organiser cannot.
+  // G: rotating door QR. The organiser registers a door key with the scoped key; the "screen"
+  // signs muster-door:<tier>:<bounty>:<slot>:<kind>; G submits it from G's own account.
+  const door = KeyPair.fromRandom("ed25519");
+  rec("organiser registers the door key for shift 1 (scoped key)", await call(organiserScoped(cfg), cfg.impactTier, "set_door_key", { bounty_id: b1, public_key: door.getPublicKey().toString() }, 60));
+  const doorCode = (bounty: number, kind: "In" | "Out", slot = Math.floor(Date.now() / 1000 / 30)) => ({
+    bounty_id: bounty, kind, slot,
+    signature: Buffer.from(door.sign(Buffer.from(`muster-door:${cfg.impactTier}:${bounty}:${slot}:${kind}`)).signature).toString("base64"),
+  });
+  rec("G scans the door QR to check in", await call(account(V.g), cfg.impactTier, "self_attest", doorCode(b1, "In"), 30));
+  const stale = rec("G replays a 10-minute-old door code", await call(account(V.g), cfg.impactTier, "self_attest", doorCode(b1, "Out", Math.floor(Date.now() / 1000 / 30) - 20), 30));
+  check("expired door code rejected", !!stale.error?.includes("ERR_CODE_EXPIRED"), stale.error ?? "");
+  const wrong = rec("G uses shift 1's code on shift 2", await call(account(V.g), cfg.impactTier, "self_attest", { ...doorCode(b1, "In"), bounty_id: b2 }, 30));
+  check("door code for another shift rejected", !!wrong.error?.match(/ERR_NO_DOOR_KEY|ERR_BAD_SIGNATURE/), wrong.error ?? "");
+
   for (const [who, b] of [["a", b1], ["b", b1], ["e", b1], ["a", b2]] as const) rec(`organiser (scoped key) checks in ${who} on bounty ${b}`, await attest(cfg, b, V[who], "In"));
   const forged = rec("F tries to attest itself (not an organiser)", await call(account(V.f), cfg.impactTier, "attest", { bounty_id: b1, volunteer: V.f, kind: "In" }, 60));
   check("non-organiser attestation rejected", !!forged.error?.includes("ERR_NOT_ORGANISER"), forged.error ?? "");
   console.log("waiting 65 s so the shift lasts at least 1 minute…");
   await sleep(65_000);
   for (const [who, b] of [["a", b1], ["b", b1], ["e", b1], ["a", b2]] as const) rec(`organiser checks out ${who} on bounty ${b}`, await attest(cfg, b, V[who], "Out"));
+  rec("G scans the door QR to check out", await call(account(V.g), cfg.impactTier, "self_attest", doorCode(b1, "Out"), 30));
+  const gAtt = await view<any>(cfg.impactTier, "attendance_of", { bounty_id: b1, account: V.g });
+  check("G's door check-in/out attributed to the organiser", gAtt.in_by === cfg.organisers[0] && gAtt.out_by === cfg.organisers[0] && !!gAtt.out_ns, JSON.stringify({ in_by: gAtt.in_by, out_by: gAtt.out_by }));
 
   // Keeper pass 1: new volunteers wait, E's duplicate is removed, the spoof is ignored.
   for (const x of await keeperPass(cfg)) rec(`keeper ${x.action} #${x.id}`, x.r, JSON.stringify(x.r.value));
@@ -109,6 +129,7 @@ async function main() {
   const bBefore = await balance(V.b);
   rec("council approves A's first shift", await act(account(cfg.council[0]), cfg.dao, pA1, "VoteApprove"));
   rec("council approves B's shift", await act(account(cfg.council[0]), cfg.dao, pB, "VoteApprove"));
+  rec("council approves G's shift (door check-in)", await act(account(cfg.council[0]), cfg.dao, pG, "VoteApprove"));
   const bDelta = (await balance(V.b)) - bBefore;
   check("B paid stipend + bonds", bDelta > near(0.6), `(+${fmt(bDelta)} NEAR)`);
 
@@ -134,7 +155,7 @@ async function main() {
   const out = {
     network: cfg.network, factory: cfg.factory, dao: cfg.dao, impactTier: cfg.impactTier,
     council: cfg.council, organisers: cfg.organisers, volunteers: V,
-    run: { at: new Date().toISOString(), bounties: { c1: b1, c2: b2 }, proposals: { A1: pA1, A2: pA2, B: pB, C: pC, D: pD, E1: pE1, F: pF } },
+    run: { at: new Date().toISOString(), bounties: { c1: b1, c2: b2 }, proposals: { A1: pA1, A2: pA2, B: pB, C: pC, D: pD, E1: pE1, F: pF, G: pG } },
   };
   mkdirSync(join(ROOT, "deployments"), { recursive: true });
   writeFileSync(join(ROOT, "deployments", "testnet.json"), JSON.stringify(out, null, 2) + "\n");
