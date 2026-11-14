@@ -12,10 +12,12 @@
     "verify": "tsx scripts/verify.ts",
     "judge": "tsx scripts/judge.ts",
     "relayer": "tsx relayer/src/server.ts",
-    "typecheck": "tsc --noEmit -p tsconfig.json"
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test:relayer": "tsx --test relayer/src/policy.test.ts"
   },
   "dependencies": {
     "@near-js/crypto": "^2.5.1",
+    "borsh": "^2.0.0",
     "near-api-js": "^7.2.0"
   },
   "devDependencies": {
