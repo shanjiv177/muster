@@ -22,6 +22,7 @@ export default function Door() {
   const [left, setLeft] = useState(0);
   const [src, setSrc] = useState("");
   const [msg, setMsg] = useState<{ ok: boolean; text: string; hash?: string } | null>(null);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     const t = setInterval(() => {
@@ -76,6 +77,8 @@ export default function Door() {
           <div className="door-qr">{src && <img src={src} alt={`Door code for ${kind === "In" ? "checking in" : "checking out"}`} />}</div>
           <div className="door-bar" aria-hidden><span style={{ width: `${(left / SLOT_SECS) * 100}%` }} /></div>
           <p className="door-caption">{kind === "In" ? "Scan to check in" : "Scan to check out"}. New code in {left} s.</p>
+          <button className="btn ghost sm" style={{ marginTop: 18 }} onClick={async () => { await navigator.clipboard.writeText(doorPayload(kp, id, kind, slot)); setCopied(true); setTimeout(() => setCopied(false), 1500); }}>{copied ? "Copied" : "Copy code"}</button>
+          <p className="small muted" style={{ marginTop: 10 }}>For volunteers without a camera: they paste this on the shift page.</p>
         </div>
       )}
     </>

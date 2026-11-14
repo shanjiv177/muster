@@ -11,6 +11,8 @@ export default function DoorScan({ bountyId, onDone }: { bountyId: number; onDon
   const scanner = useRef<QrScanner | null>(null);
   const busy = useRef(false);
   const [open, setOpen] = useState(false);
+  const [typing, setTyping] = useState(false);
+  const [code, setCode] = useState("");
   const [msg, setMsg] = useState<{ ok: boolean; text: string; hash?: string } | null>(null);
 
   async function submit(text: string) {
@@ -40,7 +42,18 @@ export default function DoorScan({ bountyId, onDone }: { bountyId: number; onDon
 
   return (
     <div>
-      {!open && <button className="btn primary" onClick={() => { setMsg(null); setOpen(true); }}>Scan the door code</button>}
+      {!open && (
+        <div className="row">
+          <button className="btn primary" onClick={() => { setMsg(null); setTyping(false); setOpen(true); }}>Scan the door code</button>
+          <button className="btn ghost" onClick={() => setTyping((t) => !t)}>Enter code instead</button>
+        </div>
+      )}
+      {typing && !open && (
+        <div className="row" style={{ marginTop: 14 }}>
+          <input value={code} onChange={(e) => setCode(e.target.value)} placeholder="Paste the code from the door screen" style={{ flex: 1 }} />
+          <button className="btn" disabled={!code.trim()} onClick={() => { const c = code; setCode(""); if (!parseDoor(c)) setMsg({ ok: false, text: "That isn't a door code." }); else submit(c); }}>Submit</button>
+        </div>
+      )}
       {open && (
         <>
           <video ref={video} className="scan" muted playsInline />
