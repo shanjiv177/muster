@@ -11,16 +11,18 @@
 //! and let the DAO vote to move the `tier` role to it.
 
 pub mod decide;
+pub mod door;
 pub mod terms;
 
-use near_sdk::json_types::U128;
+use near_sdk::json_types::{Base64VecU8, U128};
 use near_sdk::serde_json::{self, json, Value};
 use near_sdk::store::{LookupMap, LookupSet, Vector};
 use near_sdk::{
     env, ext_contract, log, near, AccountId, Gas, NearToken, PanicOnDefault, Promise, PromiseOrValue,
-    PromiseResult,
+    PromiseResult, PublicKey,
 };
 
+use door::Door;
 use decide::{decide, has_claim, organisers, parse_bounty, parse_proposal, Attendance, Context, Decision};
 
 const GAS_VIEW: Gas = Gas::from_tgas(10);
@@ -97,6 +99,8 @@ pub struct ImpactTier {
     records: LookupMap<AccountId, Record>,
     credited: LookupSet<u64>,
     outcomes: Vector<Outcome>,
+    /// Rotating-QR door key per shift, registered by an organiser.
+    doors: LookupMap<u64, Door>,
 }
 
 fn event(name: &str, data: Value) {
@@ -129,6 +133,7 @@ impl ImpactTier {
             records: LookupMap::new(b"r"),
             credited: LookupSet::new(b"k"),
             outcomes: Vector::new(b"o"),
+            doors: LookupMap::new(b"d"),
         }
     }
 
@@ -155,6 +160,54 @@ impl ImpactTier {
         if !organisers(&policy).contains(&by) {
             env::panic_str("ERR_NOT_ORGANISER");
         }
+        self.internal_record(bounty_id, volunteer, kind, by, at_ns, "organiser")
+    }
+
+    /// Registers the door key for a shift's rotating QR. The caller must be an organiser.
+    pub fn set_door_key(&mut self, bounty_id: u64, public_key: PublicKey) -> Promise {
+        if door::ed25519_bytes(&public_key).is_none() {
+            env::panic_str("ERR_DOOR_KEY_NOT_ED25519");
+        }
+        ext_dao::ext(self.dao.clone())
+            .with_static_gas(GAS_VIEW)
+            .get_policy()
+            .then(Self::ext(env::current_account_id()).with_static_gas(GAS_ON_ATTEST).on_set_door_key(
+                bounty_id,
+                public_key,
+                env::predecessor_account_id(),
+            ))
+    }
+
+    #[private]
+    pub fn on_set_door_key(&mut self, bounty_id: u64, public_key: PublicKey, by: AccountId) -> Door {
+        let policy = result_json(0).unwrap_or_else(|| env::panic_str("ERR_POLICY_UNAVAILABLE"));
+        if !organisers(&policy).contains(&by) {
+            env::panic_str("ERR_NOT_ORGANISER");
+        }
+        let d = Door { public_key, set_by: by };
+        self.doors.insert(bounty_id, d.clone());
+        event("door_key", json!({"bounty_id": bounty_id, "public_key": d.public_key, "set_by": d.set_by}));
+        d
+    }
+
+    /// Self check-in with the rotating QR shown at the venue. Records attendance for the caller,
+    /// attributed to the organiser who registered the door key (re-checked against the policy at
+    /// settlement, like any attestation).
+    pub fn self_attest(&mut self, bounty_id: u64, kind: Kind, slot: u64, signature: Base64VecU8) -> Attendance {
+        let d = self.doors.get(&bounty_id).cloned().unwrap_or_else(|| env::panic_str("ERR_NO_DOOR_KEY"));
+        if !door::slot_ok(env::block_timestamp(), slot) {
+            env::panic_str("ERR_CODE_EXPIRED");
+        }
+        let sig: [u8; 64] = signature.0.as_slice().try_into().unwrap_or_else(|_| env::panic_str("ERR_BAD_SIGNATURE"));
+        let pk = door::ed25519_bytes(&d.public_key).unwrap_or_else(|| env::panic_str("ERR_DOOR_KEY_NOT_ED25519"));
+        let msg = door::message(&env::current_account_id(), bounty_id, slot, kind);
+        if !env::ed25519_verify(&sig, msg.as_bytes(), &pk) {
+            env::panic_str("ERR_BAD_SIGNATURE");
+        }
+        self.internal_record(bounty_id, env::predecessor_account_id(), kind, d.set_by, env::block_timestamp(), "door")
+    }
+
+    fn internal_record(&mut self, bounty_id: u64, volunteer: AccountId, kind: Kind, by: AccountId, at_ns: u64, via: &str) -> Attendance {
         let key = (bounty_id, volunteer.clone());
         let mut a = self.attendance.get(&key).cloned().unwrap_or_default();
         match kind {
@@ -174,7 +227,7 @@ impl ImpactTier {
             }
         }
         self.attendance.insert(key, a.clone());
-        event("attest", json!({"bounty_id": bounty_id, "volunteer": volunteer, "kind": kind, "by": by, "at_ns": at_ns.to_string()}));
+        event("attest", json!({"bounty_id": bounty_id, "volunteer": volunteer, "kind": kind, "by": by, "via": via, "at_ns": at_ns.to_string()}));
         a
     }
 
@@ -320,6 +373,10 @@ impl ImpactTier {
 
     pub fn attendance_of(&self, bounty_id: u64, account: AccountId) -> Attendance {
         self.attendance.get(&(bounty_id, account)).cloned().unwrap_or_default()
+    }
+
+    pub fn door_of(&self, bounty_id: u64) -> Option<Door> {
+        self.doors.get(&bounty_id).cloned()
     }
 
     pub fn canonical_of(&self, bounty_id: u64, account: AccountId) -> Option<u64> {

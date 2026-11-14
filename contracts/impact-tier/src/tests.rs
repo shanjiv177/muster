@@ -232,3 +232,83 @@ fn credit_rejects_spoofed_proposal() {
     env_at("tier.testnet", 9000, vec![ok(&proposal("attacker.testnet", "v.testnet", "Approved")), ok(&bounty()), ok(&policy())]);
     c.on_credit(3, 7);
 }
+
+// ---------- rotating-QR door ----------
+
+use ed25519_dalek::{Signer, SigningKey};
+
+fn door_key() -> (SigningKey, PublicKey) {
+    let sk = SigningKey::from_bytes(&[7u8; 32]);
+    let pk: PublicKey = format!("ed25519:{}", near_sdk::bs58::encode(sk.verifying_key().as_bytes()).into_string()).parse().unwrap();
+    (sk, pk)
+}
+
+fn with_door() -> (ImpactTier, SigningKey) {
+    let mut c = contract(0);
+    let (sk, pk) = door_key();
+    env_at("tier.testnet", 1000, vec![ok(&policy())]);
+    c.on_set_door_key(7, pk, acc("org.testnet"));
+    (c, sk)
+}
+
+fn sign(sk: &SigningKey, slot: u64, kind: Kind) -> Base64VecU8 {
+    let msg = door::message(&acc("tier.testnet"), 7, slot, kind);
+    Base64VecU8(sk.sign(msg.as_bytes()).to_bytes().to_vec())
+}
+
+#[test]
+fn door_check_in_and_out_are_attributed_to_the_organiser() {
+    let (mut c, sk) = with_door();
+    env_at("v.testnet", 1000, vec![]);
+    c.self_attest(7, Kind::In, 1000 / 30, sign(&sk, 1000 / 30, Kind::In));
+    env_at("v.testnet", 3000, vec![]);
+    let a = c.self_attest(7, Kind::Out, 3000 / 30, sign(&sk, 3000 / 30, Kind::Out));
+    assert_eq!(a.minutes(), Some(33));
+    assert_eq!(a.in_by, Some(acc("org.testnet")));
+    assert_eq!(a.out_by, Some(acc("org.testnet")));
+    assert_eq!(c.door_of(7).unwrap().set_by, acc("org.testnet"));
+}
+
+#[test]
+#[should_panic(expected = "ERR_BAD_SIGNATURE")]
+fn door_code_for_out_cannot_check_in() {
+    let (mut c, sk) = with_door();
+    env_at("v.testnet", 1000, vec![]);
+    c.self_attest(7, Kind::In, 1000 / 30, sign(&sk, 1000 / 30, Kind::Out));
+}
+
+#[test]
+#[should_panic(expected = "ERR_BAD_SIGNATURE")]
+fn door_code_signed_by_another_key_is_rejected() {
+    let (mut c, _) = with_door();
+    let other = SigningKey::from_bytes(&[9u8; 32]);
+    env_at("v.testnet", 1000, vec![]);
+    c.self_attest(7, Kind::In, 1000 / 30, sign(&other, 1000 / 30, Kind::In));
+}
+
+#[test]
+#[should_panic(expected = "ERR_CODE_EXPIRED")]
+fn old_door_code_is_rejected() {
+    let (mut c, sk) = with_door();
+    env_at("v.testnet", 1000, vec![]);
+    let old = 1000 / 30 - 5;
+    c.self_attest(7, Kind::In, old, sign(&sk, old, Kind::In));
+}
+
+#[test]
+#[should_panic(expected = "ERR_NO_DOOR_KEY")]
+fn no_door_key_no_self_check_in() {
+    let mut c = contract(0);
+    let (sk, _) = door_key();
+    env_at("v.testnet", 1000, vec![]);
+    c.self_attest(7, Kind::In, 1000 / 30, sign(&sk, 1000 / 30, Kind::In));
+}
+
+#[test]
+#[should_panic(expected = "ERR_NOT_ORGANISER")]
+fn only_organisers_set_door_keys() {
+    let mut c = contract(0);
+    let (_, pk) = door_key();
+    env_at("tier.testnet", 1000, vec![ok(&policy())]);
+    c.on_set_door_key(7, pk, acc("mallory.testnet"));
+}

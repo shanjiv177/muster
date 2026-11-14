@@ -6,9 +6,11 @@ The rules contract for one Muster community. It holds the DAO's `tier` role, whi
 |---|---|---|
 | `new(dao, auto_cap, trusted_after)` | deployer (init) | Sets the DAO, the largest stipend it may approve alone, and the number of verified shifts before a volunteer is trusted |
 | `attest(bounty_id, volunteer, kind)` | an account in the DAO's `organiser` role, usually through its FunctionCall key | Reads `get_policy`. If the caller is an organiser, records `In` or `Out` at the block time |
+| `set_door_key(bounty_id, public_key)` | an organiser (FunctionCall key) | Reads `get_policy`; registers the ed25519 key of the shift's rotating-QR door screen |
+| `self_attest(bounty_id, kind, slot, signature)` | the volunteer | Verifies `muster-door:<contract>:<bounty>:<slot>:<In\|Out>` against the door key with `env::ed25519_verify`, requires the 30 s slot to be within ±2 min of block time, and records the attendance as made by the organiser who registered the key |
 | `settle(proposal_id, bounty_id, account)` | anyone | Joint promise of `get_proposal`, `get_bounty`, `get_policy` and `get_bounty_claims`, then `decide()`. Approve: votes `VoteApprove` and credits the record. Remove: votes `VoteRemove`. Otherwise waits |
 | `credit(proposal_id, bounty_id)` | anyone | Adds a council-approved, organiser-attested shift to the record, once |
-| `record_of`, `attendance_of`, `outcomes`, `outcomes_count`, `is_credited`, `canonical_of`, `get_config`, `storage_headroom` | view | |
+| `door_of`, `record_of`, `attendance_of`, `outcomes`, `outcomes_count`, `is_credited`, `canonical_of`, `get_config`, `storage_headroom` | view | |
 
 ## Decision rules (`src/decide.rs`)
 
@@ -36,6 +38,6 @@ The rules contract for one Muster community. It holds the DAO's `tier` role, whi
 - Fails closed when a DAO read fails.
 
 ```bash
-cargo test                                   # 34 tests
+cargo test                                   # 42 tests
 cargo near build non-reproducible-wasm       # target/near/impact_tier.wasm
 ```
