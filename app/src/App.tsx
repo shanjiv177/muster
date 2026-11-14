@@ -1,6 +1,7 @@
 import { HashRouter, NavLink, Route, Routes, Link } from "react-router-dom";
 import { WalletProvider, useWallet } from "./wallet";
-import Board from "./pages/Board";
+import Home from "./pages/Home";
+import Activity from "./pages/Activity";
 import CampaignPage from "./pages/Campaign";
 import Scan from "./pages/Scan";
 import Council from "./pages/Council";
@@ -15,11 +16,11 @@ function WalletButton() {
   if (w.accountId)
     return (
       <span className="row small">
-        <Link to={`/v/${w.accountId}`} style={{ color: "#fff" }} className="mono">{w.accountId}</Link>
-        <button className="btn sm ghost" style={{ color: "#fff", borderColor: "#fff" }} onClick={async () => (await w.selector!.wallet()).signOut()}>Sign out</button>
+        <Link to={`/v/${w.accountId}`}>{w.accountId}</Link>
+        <button className="btn sm ghost" onClick={async () => (await w.selector!.wallet()).signOut()}>Sign out</button>
       </span>
     );
-  return <button className="btn sm sun" onClick={() => w.modal!.show()}>Sign in</button>;
+  return <button className="btn sm" onClick={() => w.modal!.show()}>Sign in</button>;
 }
 
 function Shell() {
@@ -27,20 +28,21 @@ function Shell() {
     <>
       <header className="top">
         <div className="inner">
-          <Link className="brand" to="/">▲ <span>Mus<b>ter</b></span></Link>
+          <Link className="brand" to="/"><span className="brand-mark" aria-hidden />Muster</Link>
           <nav>
-            <NavLink to="/" end>Board</NavLink>
+            <NavLink to="/" end>Shifts</NavLink>
+            <NavLink to="/activity">Activity</NavLink>
             <NavLink to="/council">Council</NavLink>
-            <NavLink to="/organiser/new">New campaign</NavLink>
             <NavLink to="/proof">Proof</NavLink>
           </nav>
-          <span className="net">testnet</span>
+          <span className="net">NEAR testnet</span>
           <WalletButton />
         </div>
       </header>
       <main>
         <Routes>
-          <Route path="/" element={<Board />} />
+          <Route path="/" element={<Home />} />
+          <Route path="/activity" element={<Activity />} />
           <Route path="/c/:id" element={<CampaignPage />} />
           <Route path="/organiser/scan/:id" element={<Scan />} />
           <Route path="/organiser/new" element={<NewCampaign />} />
@@ -50,7 +52,7 @@ function Shell() {
         </Routes>
       </main>
       <footer>
-        Community DAO <a href={addrLink(DEP.dao)}>{DEP.dao}</a> (stock Sputnik v2) · rules contract <a href={addrLink(DEP.impactTier)}>{DEP.impactTier}</a> (no keys) · <a href="https://github.com/shanjiv177/muster">source</a>
+        Run by the community DAO <a href={addrLink(DEP.dao)}>{DEP.dao}</a> (stock Sputnik v2) and the rules contract <a href={addrLink(DEP.impactTier)}>{DEP.impactTier}</a>, which has no keys. <a href="https://github.com/shanjiv177/muster">Source on GitHub</a>.
       </footer>
     </>
   );

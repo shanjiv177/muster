@@ -15,8 +15,8 @@ export default function Certificate() {
   return (
     <>
       <div className="card cert">
-        <div className="small muted">Verified volunteer record · {DEP.network}</div>
-        <h1 style={{ marginTop: 6 }} className="mono">{account}</h1>
+        <div className="small muted">Verified volunteer record on NEAR {DEP.network}</div>
+        <h1 style={{ marginTop: 6, fontSize: "clamp(1.6rem, 3.6vw, 2.4rem)", wordBreak: "break-all" }}>{account}</h1>
         <div className="row" style={{ gap: 30, margin: "10px 0" }}>
           <div><div className="big">{h}h {m}m</div><div className="small muted">verified time on site</div></div>
           <div><div className="big">{d.shifts.length}</div><div className="small muted">shifts</div></div>
@@ -31,15 +31,15 @@ export default function Certificate() {
       <h2>Shifts</h2>
       <div className="card" style={{ overflowX: "auto" }}>
         <table>
-          <thead><tr><th>Shift</th><th>In → out</th><th>Minutes</th><th>Attested by</th><th>DAO proposal</th></tr></thead>
+          <thead><tr><th>Shift</th><th>Checked in and out</th><th>Minutes</th><th>Attested by</th><th>DAO proposal</th></tr></thead>
           <tbody>
             {d.shifts.map((s) => (
               <tr key={s.proposal.id}>
                 <td><Link to={`/c/${s.campaign!.id}`}>{s.campaign!.title}</Link><div className="small muted">{s.campaign!.place}</div></td>
-                <td className="small">{fmtTime(Number(BigInt(s.att.in_ns!) / 1_000_000_000n))} → {new Date(Number(BigInt(s.att.out_ns!) / 1_000_000n)).toLocaleTimeString()}</td>
+                <td className="small">{fmtTime(Number(BigInt(s.att.in_ns!) / 1_000_000_000n))} to {new Date(Number(BigInt(s.att.out_ns!) / 1_000_000n)).toLocaleTimeString()}</td>
                 <td>{s.minutes}</td>
                 <td className="small"><Acct id={s.att.in_by!} /></td>
-                <td className="small">#{s.proposal.id} · approved by {Object.keys(s.proposal.votes).map((v) => (v === DEP.impactTier ? "rules contract" : v)).join(", ")}</td>
+                <td className="small">#{s.proposal.id}, approved by {Object.keys(s.proposal.votes).map((v) => (v === DEP.impactTier ? "rules contract" : v)).join(", ")}</td>
               </tr>
             ))}
             {!d.shifts.length && <tr><td colSpan={5} className="muted">No verified shifts yet.</td></tr>}

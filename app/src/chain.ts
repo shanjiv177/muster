@@ -46,7 +46,7 @@ export async function campaigns(): Promise<Campaign[]> {
   return Promise.all(raw.map(async (b) => {
     const lines = String(b.description).split("\n");
     const claims = await view<number>(DEP.dao, "get_bounty_number_of_claims", { id: b.id }).catch(() => 0);
-    return { id: b.id, title: lines[0], place: lines[1]?.startsWith("MUSTER") ? "" : lines[1] ?? "", amount: BigInt(b.amount), times: b.times, claims, terms: parseTerms(b.description), description: b.description };
+    return { id: b.id, title: lines[0], place: lines[1]?.startsWith("MUSTER") ? "" : (lines[1] ?? "").split(" · ")[0], amount: BigInt(b.amount), times: b.times, claims, terms: parseTerms(b.description), description: b.description };
   }));
 }
 

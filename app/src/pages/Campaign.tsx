@@ -75,15 +75,15 @@ export default function CampaignPage() {
 
   return (
     <>
-      <p className="small"><Link to="/">← Board</Link></p>
+      <Link className="back" to="/">All shifts</Link>
       <h1>{c.title}</h1>
-      <p className="lead">{c.place}{t && <> · {fmtTime(t.start)} → {fmtTime(t.end)}</>}</p>
+      <p className="lead">{c.place}{t && <>, {fmtTime(t.start)} to {fmtTime(t.end)}</>}</p>
       <div className="grid wide">
         <div className="card">
-          <h3>Terms, approved by the DAO council</h3>
+          <h3>Terms approved by the DAO council</h3>
           <table><tbody>
-            <tr><td>Bond to RSVP</td><td><b>{nearStr(d.bond, 2)} Ⓝ</b> + {nearStr(d.proposalBond, 2)} Ⓝ proposal bond</td></tr>
-            <tr><td>Stipend</td><td>{nearStr(c.amount, 2)} Ⓝ</td></tr>
+            <tr><td>Bond to RSVP</td><td><b>{nearStr(d.bond, 2)} NEAR</b> + {nearStr(d.proposalBond, 2)} NEAR proposal bond</td></tr>
+            <tr><td>Stipend</td><td>{nearStr(c.amount, 2)} NEAR</td></tr>
             {t && <tr><td>Counts as attended</td><td>checked in and out by an organiser, at least {t.min_minutes} min apart</td></tr>}
             {t && <tr><td>No-show after</td><td>{fmtTime(t.end + t.grace_min * 60)} (end + {t.grace_min} min grace)</td></tr>}
             <tr><td>Places</td><td>{c.claims} of {c.times} held</td></tr>
@@ -94,12 +94,12 @@ export default function CampaignPage() {
         <div className="card">
           <h3>RSVP</h3>
           <ol className="steps small">
-            <li>One transaction: <code>bounty_claim</code> with your bond, then <code>bounty_done</code>. That files your payout proposal now, under your own name.</li>
-            <li>On the day, the organiser scans your code at arrival and departure.</li>
-            <li>Attended: the stipend is paid and your bond returned (automatically once you have a verified shift; a council vote for your first).<br />No-show: the rules contract votes <b>Remove</b> and the DAO keeps your bond.</li>
+            <li>One transaction locks your bond and files your payout claim in your own name.</li>
+            <li>On the day, the organiser scans your code when you arrive and when you leave.</li>
+            <li>If you attended, the stipend is paid and your bond comes back. Your first shift needs one council vote; after that it is automatic. If you didn't come, the DAO keeps the bond.</li>
           </ol>
           {!w.accountId ? (
-            <button className="btn" onClick={() => w.modal?.show()}>Sign in to RSVP</button>
+            <button className="btn primary" onClick={() => w.modal?.show()}>Sign in to RSVP</button>
           ) : d.mine ? (
             <div className="row"><StatusPill status={d.mine.p.status} /> <span className="small">You're on proposal #{d.mine.p.id}</span>
               {d.mine.p.status === "InProgress" && !d.mine.att.in_ns && <button className="btn sm ghost" disabled={busy} onClick={giveUp}>Give up my place</button>}
@@ -107,7 +107,7 @@ export default function CampaignPage() {
           ) : d.myRemoved ? (
             <div className="notice bad">Your RSVP #{d.myRemoved.proposal_id} was removed ({d.myRemoved.reason}). The bond stayed with the DAO.</div>
           ) : (
-            <button className="btn" disabled={busy || ended} onClick={rsvp}>{ended ? "Shift has ended" : `RSVP · lock ${nearStr(d.bond + d.proposalBond, 2)} Ⓝ`}</button>
+            <button className="btn primary" disabled={busy || ended} onClick={rsvp}>{ended ? "Shift has ended" : `RSVP and lock ${nearStr(d.bond + d.proposalBond, 2)} NEAR`}</button>
           )}
           {msg && <div className={`notice ${msg.ok ? "ok" : "bad"}`}>{msg.text} {msg.hash && <a href={txLink(msg.hash)} target="_blank" rel="noreferrer">tx</a>}</div>}
         </div>
@@ -126,7 +126,7 @@ export default function CampaignPage() {
               return (
                 <tr key={p.id}>
                   <td>#{p.id}</td>
-                  <td>{spoof ? <><span className="pill bad">spoof</span> <span className="mono small">{p.proposer} → {bd.receiver_id}</span></> : <Link className="mono" to={`/v/${bd.receiver_id}`}>{bd.receiver_id}</Link>}</td>
+                  <td>{spoof ? <><span className="pill bad">spoof</span> <span className="mono small">{p.proposer} names {bd.receiver_id}</span></> : <Link className="mono" to={`/v/${bd.receiver_id}`}>{bd.receiver_id}</Link>}</td>
                   <td><StatusPill status={p.status} /></td>
                   <td>{att.in_ns ? new Date(Number(BigInt(att.in_ns) / 1_000_000n)).toLocaleTimeString() : "—"}</td>
                   <td>{minutesOf(att) ?? "—"}</td>

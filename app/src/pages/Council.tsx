@@ -63,8 +63,8 @@ export default function Council() {
                 <tr key={p.id}>
                   <td>{p.id}</td>
                   <td>{spoof ? <><span className="pill bad">spoofed</span><div className="small mono">filed by {p.proposer}<br />names {bd.receiver_id}</div></> : <Link className="mono" to={`/v/${bd.receiver_id}`}>{bd.receiver_id}</Link>}</td>
-                  <td className="small"><Link to={`/c/${bd.bounty_id}`}>{camp?.title ?? `bounty ${bd.bounty_id}`}</Link><div className="muted">{camp && `${nearStr(camp.amount)} Ⓝ`}</div></td>
-                  <td>{spoof ? "—" : attested && m !== null ? <span className="pill ok">attested · {m} min</span> : att.in_ns ? <span className="pill warn">checked in only</span> : <span className="pill">no check-in yet</span>}</td>
+                  <td className="small"><Link to={`/c/${bd.bounty_id}`}>{camp?.title ?? `bounty ${bd.bounty_id}`}</Link><div className="muted">{camp && `${nearStr(camp.amount)} NEAR`}</div></td>
+                  <td>{spoof ? "—" : attested && m !== null ? <span className="pill ok">attested, {m} min</span> : att.in_ns ? <span className="pill warn">checked in only</span> : <span className="pill">no check-in yet</span>}</td>
                   <td>
                     {spoof ? (
                       <div className="notice bad small" style={{ margin: 0 }}>Don't vote on this. Rejecting it would delete {bd.receiver_id}'s claim and pay their bond to the filer (<a href="https://github.com/shanjiv177/muster/blob/main/docs/sputnik-findings.md#3-a-spoofed-bountydone-pays-the-bond-to-the-attacker">why</a>). Settle the real proposal and this one can never execute.</div>

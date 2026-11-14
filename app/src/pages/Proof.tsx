@@ -61,12 +61,12 @@ export default function Proof() {
 
       <h2>The six paths</h2>
       <div className="grid wide">
-        <div className="card"><h3>A · trusted, attended</h3><p className="small">Second verified shift. The rules contract votes <b>Approve</b> on proposal #{P.A2}, and the DAO pays the stipend and returns the bond. No human vote. <Link to={`/v/${DEP.volunteers.a}`}>Certificate</Link></p></div>
-        <div className="card"><h3>B · new, attended</h3><p className="small">The first shift waits for one council vote (#{P.B}); then <code>credit</code> adds it to the record. <Link to={`/v/${DEP.volunteers.b}`}>Certificate</Link></p></div>
-        <div className="card"><h3>C · no-show</h3><p className="small">No check-in by end + grace. The rules contract votes <b>Remove</b> on #{P.C}: the proposal is deleted and the 0.51 Ⓝ stays in the DAO. A <i>Reject</i> would have refunded it.</p></div>
-        <div className="card"><h3>D · gave up in time</h3><p className="small"><code>bounty_giveup</code> within 24 h of the RSVP refunds the bond. The leftover proposal #{P.D} has no claim, so the rules contract leaves it alone.</p></div>
-        <div className="card"><h3>E · double RSVP</h3><p className="small">The second one-transaction RSVP reverts as a unit (<code>ERR_BOUNTY_CLAIM_COMPLETED</code>). No second bond, no second proposal.</p></div>
-        <div className="card"><h3>F · spoofed proposal</h3><p className="small">F files <code>BountyDone</code> naming B (#{P.F}). Rejecting it would pay B's bond to F. The rules contract ignores it, B is settled first, and after that the reject reverts.</p></div>
+        <div className="card"><h3>A. trusted, attended</h3><p className="small">Second verified shift. The rules contract votes <b>Approve</b> on proposal #{P.A2}, and the DAO pays the stipend and returns the bond. No human vote. <Link to={`/v/${DEP.volunteers.a}`}>Certificate</Link></p></div>
+        <div className="card"><h3>B. new, attended</h3><p className="small">The first shift waits for one council vote (#{P.B}); then <code>credit</code> adds it to the record. <Link to={`/v/${DEP.volunteers.b}`}>Certificate</Link></p></div>
+        <div className="card"><h3>C. no-show</h3><p className="small">No check-in by end + grace. The rules contract votes <b>Remove</b> on #{P.C}: the proposal is deleted and the 0.51 NEAR stays in the DAO. A <i>Reject</i> would have refunded it.</p></div>
+        <div className="card"><h3>D. gave up in time</h3><p className="small"><code>bounty_giveup</code> within 24 h of the RSVP refunds the bond. The leftover proposal #{P.D} has no claim, so the rules contract leaves it alone.</p></div>
+        <div className="card"><h3>E. double RSVP</h3><p className="small">The second one-transaction RSVP reverts as a unit (<code>ERR_BOUNTY_CLAIM_COMPLETED</code>). No second bond, no second proposal.</p></div>
+        <div className="card"><h3>F. spoofed proposal</h3><p className="small">F files <code>BountyDone</code> naming B (#{P.F}). Rejecting it would pay B's bond to F. The rules contract ignores it, B is settled first, and after that the reject reverts.</p></div>
       </div>
 
       <h2>Scripted run, step by step</h2>

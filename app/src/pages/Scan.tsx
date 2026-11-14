@@ -65,7 +65,7 @@ export default function Scan() {
 
   return (
     <>
-      <p className="small"><Link to={`/c/${id}`}>← {d.camp?.title ?? `bounty #${id}`}</Link></p>
+      <Link className="back" to={`/c/${id}`}>{d.camp?.title ?? `Shift ${id}`}</Link>
       <h1>Organiser check-in</h1>
       <p className="lead">Scan each volunteer's code on arrival (<b>In</b>) and departure (<b>Out</b>). The minutes between them are what the DAO pays for and what goes on the volunteer's certificate.</p>
 
@@ -102,7 +102,7 @@ export default function Scan() {
             {!log.length && <p className="muted small">Scans appear here with their transactions.</p>}
             {log.map((l, i) => (
               <div key={i} className={`notice ${l.ok ? "ok" : "bad"} small`}>
-                {l.at} · <span className="mono">{l.who}</span> · {l.text} {l.hash && <a href={txLink(l.hash)} target="_blank" rel="noreferrer">tx</a>}
+                {l.at}, {l.who}: {l.text} {l.hash && <a href={txLink(l.hash)} target="_blank" rel="noreferrer">tx</a>}
               </div>
             ))}
             <p className="small muted">{d.rsvps.length} open RSVPs on this shift.</p>

@@ -44,7 +44,7 @@ export default function NewCampaign() {
           <div className="row">
             <div style={{ flex: 1 }}><label>Grace after end (min)</label><input type="number" min={0} value={f.grace} onChange={set("grace")} /></div>
             <div style={{ flex: 1 }}><label>Places</label><input type="number" min={1} value={f.slots} onChange={set("slots")} /></div>
-            <div style={{ flex: 1 }}><label>Stipend (Ⓝ)</label><input type="number" min={0} step={0.01} value={f.stipend} onChange={set("stipend")} /></div>
+            <div style={{ flex: 1 }}><label>Stipend (NEAR)</label><input type="number" min={0} step={0.01} value={f.stipend} onChange={set("stipend")} /></div>
           </div>
           <div style={{ marginTop: 14 }}>
             {!w.accountId ? <button className="btn" onClick={() => w.modal?.show()}>Sign in as organiser</button>
