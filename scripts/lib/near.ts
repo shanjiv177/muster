@@ -3,14 +3,18 @@
 import { readFileSync, existsSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
-import { Account, JsonRpcProvider, actions, nearToYocto, teraToGas } from "near-api-js";
+import { Account, FailoverRpcProvider, JsonRpcProvider, actions, nearToYocto, teraToGas } from "near-api-js";
 import type { KeyPairString } from "near-api-js";
 
 export const NETWORK = process.env.NEAR_NETWORK ?? "testnet";
 export const RPC_URL = process.env.NEAR_RPC_URL ?? "https://rpc.testnet.fastnear.com";
 export const EXPLORER = "https://testnet.nearblocks.io";
 
-export const provider = new JsonRpcProvider({ url: RPC_URL });
+// Failover across public testnet RPCs with backoff: free endpoints rate-limit bursts (HTTP 429).
+const RPCS = [RPC_URL, "https://test.rpc.fastnear.com", "https://near-testnet.drpc.org", "https://rpc.testnet.near.org"];
+export const provider = new FailoverRpcProvider(
+  [...new Set(RPCS)].map((url) => new JsonRpcProvider({ url }, { retries: 6, wait: 700, backoff: 1.6 })),
+) as unknown as JsonRpcProvider;
 
 export function credentialPath(accountId: string): string {
   return join(homedir(), ".near-credentials", NETWORK, `${accountId}.json`);
