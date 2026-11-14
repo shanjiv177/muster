@@ -4,7 +4,7 @@
 
 Built at NEAR HACKATHON for the `social` track. Everything below runs on **NEAR testnet** today:
 - Community DAO: [`muster-juhu.sputnikv2.testnet`](https://testnet.nearblocks.io/address/muster-juhu.sputnikv2.testnet). It is stock Sputnik v2 from the `sputnikv2.testnet` factory, with factory auto-update turned off.
-- Rules contract: [`v1.muster-tier.testnet`](https://testnet.nearblocks.io/address/v1.muster-tier.testnet), Rust, with zero access keys.
+- Rules contract: [`v2.muster-tier.testnet`](https://testnet.nearblocks.io/address/v2.muster-tier.testnet), Rust, with zero access keys. It replaced v1 through a council vote that moved the DAO's `tier` role, which is the only way it can be upgraded.
 - App: **https://shanjiv177.github.io/muster/**. React, reading the chain directly with no backend.
 - NEP-366 relayer: **https://rupee-rail.indiasouthcentral.cloudapp.azure.com/muster-relay/health**. It pays gas for check-ins, and never for bonds.
 
@@ -13,7 +13,7 @@ Built at NEAR HACKATHON for the `social` track. Everything below runs on **NEAR 
 | See it without a wallet | [App → Proof](https://shanjiv177.github.io/muster/#/proof): live policy checks, plus every transaction of the scripted run |
 | Re-check the chain from a clone | `npm ci && npm run judge` (read-only, no keys) |
 | Rebuild one volunteer's hours from chain data | `npm run verify -- rmwg629bw.muster-vol-a.testnet` |
-| Contract tests | `cd contracts/impact-tier && cargo test` (34 tests) |
+| Contract tests | `cd contracts/impact-tier && cargo test` (42 tests) |
 | What Sputnik really does with bonds, tested on testnet | [docs/sputnik-findings.md](docs/sputnik-findings.md) |
 | Every transaction of the end-to-end run | [docs/testnet-run.md](docs/testnet-run.md) |
 
@@ -54,13 +54,13 @@ Built at NEAR HACKATHON for the `social` track. Everything below runs on **NEAR 
 
 | Do | See |
 |---|---|
-| Open the app's **Proof** page | 7 live PASS checks: stock code hash, auto-update off, a 0-key rules contract, exact role permissions. Below them, scenarios A–F with transaction links |
+| Open the app's **Proof** page | 7 live PASS checks: stock code hash, auto-update off, a 0-key rules contract, exact role permissions. Below them, scenarios A–G with transaction links |
 | Open the [home page](https://shanjiv177.github.io/muster/) | A real verified shift drawn as a timecard and stamped by the DAO, live totals, and open shifts. **Activity** shows every vote the rules contract cast |
 | Open the certificate for `rmwg629bw.muster-vol-a.testnet` | 2 verified shifts. The first was approved by the council, the second automatically by the rules contract. The chain rebuild shows **match** |
 | Sign in with a testnet wallet, open a campaign, press **RSVP** | One wallet transaction with `bounty_claim` and `bounty_done`. A QR check-in code appears |
 | Sign in as an organiser, open **Organiser check-in**, press **Add check-in key**, then scan or type a volunteer | A FunctionCall key appears on your account (impact-tier, `attest` only). Each scan is an `attest` transaction with no wallet pop-up |
 | Open **Council** | Open shift proposals with attendance badges, spoofs flagged with a warning, and no Reject button |
-| `npm run simulate` (needs the testnet keys created by bootstrap) | Scenarios A–F run end to end in about 7 minutes. Output goes to `docs/testnet-run.md` |
+| `npm run simulate` (needs the testnet keys created by bootstrap) | Scenarios A–G run end to end in about 8 minutes. Output goes to `docs/testnet-run.md` |
 
 ### Run it locally
 
@@ -86,7 +86,9 @@ To create your own community from scratch, you need testnet accounts in `~/.near
 | Upgrade safety | Factory `auto_update` turned off by a `FactoryInfoUpdate` proposal, so only the community can change its DAO's code |
 | One-transaction RSVP | A batched transaction with two FunctionCall actions to the DAO |
 | Organiser check-in | **FunctionCall access key** limited to `attest`, plus a **NEP-366** relayer |
-| Accounts | Named accounts and sub-accounts (`v1.muster-tier.testnet`), so the rules contract can be versioned and the DAO can vote to move its role to `v2` |
+| Accounts | Named accounts and sub-accounts. The rules contract is versioned (`v1` → `v2.muster-tier.testnet`), and the DAO voted the `tier` role over to v2 ([tx](https://testnet.nearblocks.io/txns/5u9oysVmmSEcEi32fKH6CbpXU9JAx62Ya9k9iEKGivCJ)) |
+| Self check-in | `env::ed25519_verify` on a rotating door QR: the organiser's screen signs `muster-door:<contract>:<shift>:<30 s slot>:<In\|Out>`, and codes older than 2 minutes are refused |
+| Campaign details | IPFS (pinned through the relayer, organisers only, uploads signed with their check-in key). The bounty records `META ipfs://<cid>` |
 
 ### Track fit (social)
 
@@ -117,13 +119,8 @@ To create your own community from scratch, you need testnet accounts in `~/.near
 - **The volunteer needs NEAR for the bond.** By design: in NEP-366 the relayer would pay the bond, so RSVPs are wallet transactions. Gas is ~0.003 NEAR.
 - **Someone has to call `settle`.** Anyone can: the app, the keeper script (`npm run keeper`), or the volunteer.
 - **Partial attendance goes to the council.** That covers a check-in without a check-out, and a shift shorter than the minimum. The contract never auto-forfeits a volunteer who checked in.
-- **Not built yet** (designed in [FINAL-PLAN.md](FINAL-PLAN.md)):
-  - rotating-QR self check-in;
-  - IPFS campaign metadata;
-  - near.social posts;
-  - a NEAR Intents (1Click) sponsor page.
-
-  near.social and 1Click are mainnet-only.
+- **The door QR can be shared within its 2-minute window.** A volunteer at the venue could send a fresh code to a friend who isn't there. Rotation limits this to a short window, and the organiser-scan mode stays available where that matters.
+- **Not built yet:** near.social posts and a NEAR Intents (1Click) sponsor page. Both are mainnet-only.
 - **The demo shifts are short.** The scripted run uses 1–3 minute shifts so it finishes in minutes.
 
 ## Repository

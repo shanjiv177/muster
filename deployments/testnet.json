@@ -2,7 +2,7 @@
   "network": "testnet",
   "factory": "sputnikv2.testnet",
   "dao": "muster-juhu.sputnikv2.testnet",
-  "impactTier": "v1.muster-tier.testnet",
+  "impactTier": "v2.muster-tier.testnet",
   "council": [
     "muster-council-1.testnet",
     "muster-council-2.testnet"
@@ -11,27 +11,29 @@
     "muster-org.testnet"
   ],
   "volunteers": {
-    "a": "rmwg629bw.muster-vol-a.testnet",
-    "b": "rmwg62cl8.muster-vol-b.testnet",
+    "a": "rmwg95bhl.muster-vol-a.testnet",
+    "b": "rmwg95ene.muster-vol-b.testnet",
     "c": "muster-vol-c.testnet",
     "d": "muster-vol-d.testnet",
     "e": "muster-vol-e.testnet",
-    "f": "muster-vol-f.testnet"
+    "f": "muster-vol-f.testnet",
+    "g": "rmwg95hn6.muster-vol-d.testnet"
   },
   "run": {
-    "at": "2026-11-14T08:57:33.926Z",
+    "at": "2026-11-14T10:23:44.040Z",
     "bounties": {
-      "c1": 8,
-      "c2": 9
+      "c1": 10,
+      "c2": 11
     },
     "proposals": {
-      "A1": 35,
-      "A2": 40,
-      "B": 36,
-      "C": 37,
-      "D": 38,
-      "E1": 39,
-      "F": 41
+      "A1": 45,
+      "A2": 51,
+      "B": 46,
+      "C": 47,
+      "D": 48,
+      "E1": 49,
+      "F": 52,
+      "G": 50
     }
   }
 }
