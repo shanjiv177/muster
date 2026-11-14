@@ -12,7 +12,7 @@ export interface Allowlist {
 }
 
 export const METHODS = (a: Allowlist): Record<string, string[]> => ({
-  [a.impactTier]: ["attest", "settle", "credit"],
+  [a.impactTier]: ["attest", "set_door_key", "self_attest", "settle", "credit"],
   [a.dao]: ["bounty_giveup"],
 });
 

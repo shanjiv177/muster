@@ -14,6 +14,7 @@ import type { KeyPairString } from "near-api-js";
 import { account, summarize, tgas } from "../../scripts/lib/near.js";
 import { ROOT } from "../../scripts/lib/config.js";
 import { METHODS, RateLimit, refuse, type Allowlist } from "./policy.js";
+import { MAX_BYTES, checkOrganiser, checkShape, pinToPinata, type PinRequest } from "./pin.js";
 
 const dep = JSON.parse(readFileSync(join(ROOT, "deployments", "testnet.json"), "utf8"));
 const RELAYER = process.env.RELAYER_ACCOUNT ?? "muster-relay.testnet";
@@ -21,6 +22,7 @@ const relayer = account(RELAYER, process.env.RELAYER_PRIVATE_KEY as KeyPairStrin
 const allow: Allowlist = { dao: dep.dao, impactTier: dep.impactTier, maxGas: tgas(300), maxActions: 4 };
 const limit = new RateLimit(Number(process.env.RATE_PER_HOUR ?? 120), 3_600_000);
 const ORIGIN = process.env.ALLOW_ORIGIN ?? "*";
+const pinLimit = new RateLimit(30, 3_600_000);
 
 function reply(res: ServerResponse, status: number, body: unknown) {
   res.writeHead(status, {
@@ -36,7 +38,7 @@ async function body(req: IncomingMessage): Promise<any> {
   let s = "";
   for await (const chunk of req) {
     s += chunk;
-    if (s.length > 64_000) throw new Error("body too large");
+    if (s.length > MAX_BYTES * 1.4 + 4_000) throw new Error("body too large");
   }
   return JSON.parse(s || "{}");
 }
@@ -61,7 +63,19 @@ async function relay(b64: string) {
 createServer(async (req, res) => {
   try {
     if (req.method === "OPTIONS") return reply(res, 204, {});
-    if (req.method === "GET" && req.url === "/health") return reply(res, 200, { relayer: RELAYER, allow: METHODS(allow), deposits: "never relayed" });
+    if (req.method === "GET" && req.url === "/health") return reply(res, 200, { relayer: RELAYER, allow: METHODS(allow), deposits: "never relayed", pinning: !!process.env.PINATA_JWT });
+    if (req.method === "POST" && req.url === "/pin") {
+      const jwt = process.env.PINATA_JWT;
+      if (!jwt) return reply(res, 503, { ok: false, error: "pinning is not configured on this relayer" });
+      const r: PinRequest = await body(req);
+      const bytes = Buffer.from(r.data ?? "", "base64");
+      const why = checkShape(r, bytes) ?? (await checkOrganiser(r, allow.dao, allow.impactTier));
+      if (why) return reply(res, 403, { ok: false, error: why });
+      if (!pinLimit.take(r.account)) return reply(res, 429, { ok: false, error: "rate limited" });
+      const cid = await pinToPinata(jwt, r.name || "muster", r.contentType, bytes);
+      console.log(`pin ${r.account} ${r.contentType} ${bytes.length} B -> ${cid}`);
+      return reply(res, 200, { ok: true, cid, uri: `ipfs://${cid}` });
+    }
     if (req.method === "POST" && req.url === "/relay") {
       const { signedDelegate } = await body(req);
       if (typeof signedDelegate !== "string") return reply(res, 400, { ok: false, error: "signedDelegate (base64) required" });

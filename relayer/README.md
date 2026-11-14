@@ -6,7 +6,7 @@ A NEP-366 meta-transaction relayer. It pays gas for organiser check-ins and othe
 
 | Receiver | Methods relayed |
 |---|---|
-| impact-tier | `attest`, `settle`, `credit` |
+| impact-tier | `attest`, `set_door_key`, `self_attest`, `settle`, `credit` |
 | community DAO | `bounty_giveup` |
 
 Other rules:
@@ -22,6 +22,13 @@ curl localhost:8787/health
 ```
 
 `POST /relay {"signedDelegate": "<base64 borsh SignedDelegate>"}` returns `{ok, hash, link, error}`.
+
+`POST /pin` pins campaign details (JSON) or a cover photo (JPEG, PNG or WebP, up to 2 MB) to IPFS through Pinata, and returns `ipfs://<cid>`. Only DAO organisers can pin:
+- the request is signed with the organiser's impact-tier check-in key, over `muster-pin:<account>:<sha256 of the file>:<timestamp>`;
+- the relayer checks on chain that this key belongs to the account and is scoped to impact-tier;
+- the relayer checks that the account is in the DAO's `organiser` role.
+
+The Pinata JWT (`PINATA_JWT`) stays in the server's env file.
 
 To host it, set `RELAYER_ACCOUNT`, `RELAYER_PRIVATE_KEY`, `PORT`, and `ALLOW_ORIGIN` (your app's origin). Then build the app with `VITE_RELAYER_URL` set to the relayer's URL.
 
