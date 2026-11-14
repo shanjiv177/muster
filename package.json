@@ -14,7 +14,8 @@
     "relayer": "tsx relayer/src/server.ts",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test:relayer": "tsx --test relayer/src/policy.test.ts relayer/src/pin.test.ts",
-    "balances": "tsx scripts/balances.ts"
+    "balances": "tsx scripts/balances.ts",
+    "add-member": "tsx scripts/add-member.ts"
   },
   "dependencies": {
     "@near-js/crypto": "^2.5.1",
