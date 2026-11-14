@@ -17,11 +17,10 @@ function MyQr({ bountyId, account }: { bountyId: number; account: string }) {
   const [src, setSrc] = useState("");
   useEffect(() => { QRCode.toDataURL(qrPayload(bountyId, account), { width: 260, margin: 1 }).then(setSrc); }, [bountyId, account]);
   return (
-    <div className="card" style={{ textAlign: "center" }}>
-      <h3>Your check-in code</h3>
-      <p className="small muted">Show this to the organiser when you arrive and when you leave. You don't sign anything on the day.</p>
-      {src && <div className="qr"><img src={src} width={260} height={260} alt={`check-in code for ${account}`} /></div>}
-      <div className="mono small" style={{ marginTop: 8 }}>{qrPayload(bountyId, account)}</div>
+    <div>
+      <h3>Show this at the entrance</h3>
+      <p className="muted">The organiser scans it when you arrive and leave.</p>
+      {src && <div className="qr"><img src={src} width={240} height={240} alt={`Check-in code for ${account}`} /></div>}
     </div>
   );
 }
@@ -77,85 +76,89 @@ export default function CampaignPage() {
     setBusy(false);
   }
 
+  const when = t ? new Date(t.start * 1000) : null;
+  const hours = t ? (t.end - t.start) / 3600 : 0;
+  const action = !w.accountId ? (
+    <button className="btn primary lg block" onClick={() => w.modal?.show()}>Sign in to RSVP</button>
+  ) : d.mine ? (
+    <div>
+      <div className="row"><StatusPill status={d.mine.p.status} /><span className="small muted">Proposal #{d.mine.p.id}</span></div>
+      {d.mine.p.status === "InProgress" && !d.mine.att.in_ns && <button className="btn ghost sm" style={{ marginTop: 14 }} disabled={busy} onClick={giveUp}>Give up my place</button>}
+    </div>
+  ) : d.myRemoved ? (
+    <div className="notice bad">Removed: {d.myRemoved.reason}. The bond stayed with the DAO.</div>
+  ) : (
+    <button className="btn primary lg block" disabled={busy || ended} onClick={rsvp}>{ended ? "Shift has ended" : "RSVP"}</button>
+  );
+
   return (
     <>
       <Link className="back" to="/">All shifts</Link>
-      <h1>{c.title}</h1>
-      <p className="lead">{c.place}{t && <>, {fmtTime(t.start)} to {fmtTime(t.end)}</>}</p>
-      {d.meta?.cover && <img className="cover" src={gatewayUrl(d.meta.cover)} alt={`Cover photo for ${c.title}`} />}
-      {d.meta?.about && <p style={{ whiteSpace: "pre-line", marginBottom: 28 }}>{d.meta.about}</p>}
-      {d.uri && !d.meta && <p className="small muted">The shift details on IPFS ({d.uri}) haven't loaded yet.</p>}
-      <div className="grid wide">
-        <div className="card">
-          <h3>Terms approved by the DAO council</h3>
-          <table><tbody>
-            <tr><td>Bond to RSVP</td><td><b>{nearStr(d.bond, 2)} NEAR</b> + {nearStr(d.proposalBond, 2)} NEAR proposal bond</td></tr>
-            <tr><td>Stipend</td><td>{nearStr(c.amount, 2)} NEAR</td></tr>
-            {t && <tr><td>Counts as attended</td><td>checked in and out by an organiser, at least {t.min_minutes} min apart</td></tr>}
-            {t && <tr><td>No-show after</td><td>{fmtTime(t.end + t.grace_min * 60)} (end + {t.grace_min} min grace)</td></tr>}
-            <tr><td>Places</td><td>{c.claims} of {c.times} held</td></tr>
-          </tbody></table>
-          {d.uri && <p className="small muted">Details and photo: <a href={gatewayUrl(d.uri)} target="_blank" rel="noreferrer">{d.uri}</a></p>}
-          <p className="small muted">These terms are the last line of bounty #{c.id}'s description: <code>{c.description.split("\n").pop()}</code></p>
+      <div className="event">
+        <div>
+          {when && <div className="event-when">{when.toLocaleDateString([], { weekday: "long", day: "numeric", month: "long" })}</div>}
+          <h1>{c.title}</h1>
+          <p className="lead">{c.place}{when && <>, {when.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</>}</p>
+          {d.meta?.cover && <img className="cover" src={gatewayUrl(d.meta.cover)} alt={`Cover photo for ${c.title}`} />}
+          {d.meta?.about && <p className="about">{d.meta.about}</p>}
+
+          <div className="facts">
+            <div><b>{hours % 1 ? hours.toFixed(1) : hours}h</b><span>shift</span></div>
+            {t && <div><b>{t.min_minutes}m</b><span>minimum on site</span></div>}
+            <div><b>{nearStr(c.amount)}</b><span>NEAR stipend</span></div>
+            <div><b>{c.times - c.claims}</b><span>of {c.times} places left</span></div>
+          </div>
         </div>
 
-        <div className="card">
-          <h3>RSVP</h3>
-          <ol className="steps small">
-            <li>One transaction locks your bond and files your payout claim in your own name.</li>
-            <li>On the day, the organiser scans your code when you arrive and when you leave.</li>
-            <li>If you attended, the stipend is paid and your bond comes back. Your first shift needs one council vote; after that it is automatic. If you didn't come, the DAO keeps the bond.</li>
-          </ol>
-          {!w.accountId ? (
-            <button className="btn primary" onClick={() => w.modal?.show()}>Sign in to RSVP</button>
-          ) : d.mine ? (
-            <div className="row"><StatusPill status={d.mine.p.status} /> <span className="small">You're on proposal #{d.mine.p.id}</span>
-              {d.mine.p.status === "InProgress" && !d.mine.att.in_ns && <button className="btn sm ghost" disabled={busy} onClick={giveUp}>Give up my place</button>}
-            </div>
-          ) : d.myRemoved ? (
-            <div className="notice bad">Your RSVP #{d.myRemoved.proposal_id} was removed ({d.myRemoved.reason}). The bond stayed with the DAO.</div>
-          ) : (
-            <button className="btn primary" disabled={busy || ended} onClick={rsvp}>{ended ? "Shift has ended" : `RSVP and lock ${nearStr(d.bond + d.proposalBond, 2)} NEAR`}</button>
-          )}
-          {msg && <div className={`notice ${msg.ok ? "ok" : "bad"}`}>{msg.text} {msg.hash && <a href={txLink(msg.hash)} target="_blank" rel="noreferrer">tx</a>}</div>}
-        </div>
+        <aside className="panel">
+          <div className="panel-amount"><b>{nearStr(d.bond + d.proposalBond, 2)}</b> NEAR bond</div>
+          <p className="small muted">Returned when you attend. Kept if you don't.</p>
+          {action}
+          {msg && <div className={`notice ${msg.ok ? "ok" : "bad"}`}>{msg.text} {msg.hash && <a href={txLink(msg.hash)} target="_blank" rel="noreferrer">View transaction</a>}</div>}
+        </aside>
       </div>
 
       {w.accountId && d.mine && d.mine.p.status === "InProgress" && (
-        <div className="grid wide" style={{ marginTop: 20 }}>
-          <MyQr bountyId={id} account={w.accountId} />
-          <div className="card">
-            <h3>Or check yourself in</h3>
-            <p className="small muted">If the organiser has a door screen up, scan its code when you arrive and again when you leave. Your wallet asks you to confirm each one.</p>
-            <DoorScan bountyId={id} onDone={reload} />
+        <section className="block">
+          <h2>On the day</h2>
+          <div className="checkin">
+            <MyQr bountyId={id} account={w.accountId} />
+            <div>
+              <h3>Or scan the door code</h3>
+              <p className="muted">If there's a screen at the entrance, scan it on arrival and again when you leave.</p>
+              <DoorScan bountyId={id} onDone={reload} />
+            </div>
           </div>
-        </div>
+        </section>
       )}
 
-      <h2>RSVPs</h2>
-      <div className="card" style={{ overflowX: "auto" }}>
-        <table>
-          <thead><tr><th>Proposal</th><th>Volunteer</th><th>Status</th><th>Checked in</th><th>Minutes</th></tr></thead>
-          <tbody>
-            {d.rows.map(({ p, att }) => {
-              const bd = bountyDone(p)!;
-              const spoof = bd.receiver_id !== p.proposer;
-              return (
-                <tr key={p.id}>
-                  <td>#{p.id}</td>
-                  <td>{spoof ? <><span className="pill bad">spoof</span> <span className="mono small">{p.proposer} names {bd.receiver_id}</span></> : <Link className="mono" to={`/v/${bd.receiver_id}`}>{bd.receiver_id}</Link>}</td>
-                  <td><StatusPill status={p.status} /></td>
-                  <td>{att.in_ns ? new Date(Number(BigInt(att.in_ns) / 1_000_000n)).toLocaleTimeString() : "—"}</td>
-                  <td>{minutesOf(att) ?? "—"}</td>
-                </tr>
-              );
-            })}
-            {d.removed.map((o) => (
-              <tr key={`r${o.proposal_id}`}><td>#{o.proposal_id}</td><td className="mono">{o.account}</td><td><StatusPill status="removed" /></td><td>—</td><td className="small muted">{o.reason}, bond kept</td></tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <section className="block">
+        <h2>Who's coming</h2>
+        <div className="people">
+          {d.rows.map(({ p, att }) => {
+            const bd = bountyDone(p)!;
+            const spoof = bd.receiver_id !== p.proposer;
+            const m = minutesOf(att);
+            return (
+              <div className="person" key={p.id}>
+                {spoof ? <span className="small muted">{p.proposer} filed a claim naming {bd.receiver_id}</span> : <Link to={`/v/${bd.receiver_id}`}>{bd.receiver_id}</Link>}
+                <span className="row">{m !== null && <span className="small muted">{m} min</span>}{spoof ? <span className="pill bad">Spoofed</span> : <StatusPill status={p.status} />}</span>
+              </div>
+            );
+          })}
+          {d.removed.map((o) => (
+            <div className="person" key={`r${o.proposal_id}`}><span>{o.account}</span><span className="pill bad">No-show</span></div>
+          ))}
+          {!d.rows.length && !d.removed.length && <p className="muted">No one yet. Be the first.</p>}
+        </div>
+      </section>
+
+      <details className="more-info">
+        <summary>On-chain details</summary>
+        <p className="small muted">This shift is bounty #{c.id} in <a href={`https://testnet.nearblocks.io/address/${DEP.dao}`}>{DEP.dao}</a>. RSVP is one transaction: <code>bounty_claim</code> with the {nearStr(d.bond, 2)} NEAR bond, then <code>bounty_done</code> with a {nearStr(d.proposalBond, 2)} NEAR proposal bond. Your first verified shift needs one council vote; after that the rules contract approves automatically.</p>
+        {t && <p className="small muted">No-show after {fmtTime(t.end + t.grace_min * 60)}. Terms approved by the council: <code>{c.description.split("\n").pop()}</code></p>}
+        {d.uri && <p className="small muted">Details on IPFS: <a href={gatewayUrl(d.uri)} target="_blank" rel="noreferrer">{d.uri}</a></p>}
+      </details>
     </>
   );
 }

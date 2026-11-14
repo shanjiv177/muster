@@ -17,14 +17,13 @@ export default function Certificate() {
       <div className="card cert">
         <div className="small muted">Verified volunteer record on NEAR {DEP.network}</div>
         <h1 style={{ marginTop: 6, fontSize: "clamp(1.6rem, 3.6vw, 2.4rem)", wordBreak: "break-all" }}>{account}</h1>
-        <div className="row" style={{ gap: 30, margin: "10px 0" }}>
+        <div className="row" style={{ gap: 56, margin: "28px 0 8px" }}>
           <div><div className="big">{h}h {m}m</div><div className="small muted">verified time on site</div></div>
           <div><div className="big">{d.shifts.length}</div><div className="small muted">shifts</div></div>
         </div>
-        <p className="small">
-          Every shift below is a <b>BountyDone</b> proposal the community's DAO <Acct id={DEP.dao} /> approved, with check-in and check-out signed by accounts in its <code>organiser</code> role.
-          This page rebuilds the total from that chain data in your browser and compares it with the record kept by the rules contract <Acct id={DEP.impactTier} />:
-          {" "}{d.match ? <span className="pill ok">match</span> : <span className="pill warn">differs: some approved shifts aren't credited yet</span>}
+        <p className="small" style={{ marginTop: 24 }}>
+          {d.match ? <span className="pill ok">Verified on chain</span> : <span className="pill warn">Some approved shifts aren't credited yet</span>}
+          <span className="muted"> Rebuilt in your browser from DAO proposals and organiser check-ins.</span>
         </p>
       </div>
 
@@ -46,11 +45,13 @@ export default function Certificate() {
           </tbody>
         </table>
       </div>
-      <h2>Check it yourself</h2>
+      <details className="more-info">
+        <summary>Check it yourself</summary>
       <ul className="small">
         <li>From a clone of the repo: <code>npm run verify -- {account}</code> rebuilds this from the chain and exits 0 if it matches.</li>
         <li>Raw: call <code>record_of {"{"}"account":"{account}"{"}"}</code> on <a href={addrLink(DEP.impactTier)}>{DEP.impactTier}</a>, and <code>get_proposal</code> on <a href={addrLink(DEP.dao)}>{DEP.dao}</a> for each proposal id.</li>
       </ul>
+      </details>
     </>
   );
 }

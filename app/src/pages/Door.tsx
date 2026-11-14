@@ -53,7 +53,7 @@ export default function Door() {
     <>
       <Link className="back" to={`/organiser/scan/${id}`}>Organiser check-in</Link>
       <h1>{d.camp?.title ?? `Shift ${id}`}: door code</h1>
-      <p className="lead">Put this screen at the entrance. Volunteers scan it with their phone to check themselves in and out. The code changes every {SLOT_SECS} seconds, so a photo of it stops working within two minutes.</p>
+      <p className="lead">Put this at the entrance. It changes every {SLOT_SECS} seconds.</p>
 
       {!ready && (
         <div className="card">

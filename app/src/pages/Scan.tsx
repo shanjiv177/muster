@@ -66,8 +66,8 @@ export default function Scan() {
   return (
     <>
       <Link className="back" to={`/c/${id}`}>{d.camp?.title ?? `Shift ${id}`}</Link>
-      <h1>Organiser check-in</h1>
-      <p className="lead">Scan each volunteer's code on arrival (<b>In</b>) and departure (<b>Out</b>). The minutes between them are what the DAO pays for and what goes on the volunteer's certificate.</p>
+      <h1>Check-in</h1>
+      <p className="lead">Scan on arrival, scan on departure.</p>
 
       {!me && <button className="btn" onClick={() => w.modal?.show()}>Sign in as organiser</button>}
       {me && !d.isOrganiser && <div className="notice bad"><span className="mono">{me}</span> is not in the DAO's <code>organiser</code> role, so impact-tier will refuse its check-ins.</div>}

@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { DEP, addrLink, campaigns, outcomes } from "../chain";
+import { DEP, campaigns, outcomes } from "../chain";
 import { Acct, Err, Loading, StatusPill, useAsync } from "../ui";
 
 export default function Activity() {
@@ -12,9 +12,7 @@ export default function Activity() {
   return (
     <>
       <h1>Activity</h1>
-      <p className="lead">
-        Every vote the rules contract <a href={addrLink(DEP.impactTier)}>{DEP.impactTier}</a> cast, and every council approval it credited. Removed claims are deleted from the DAO, so this log is where you can still see them.
-      </p>
+      <p className="lead">Every decision the rules contract made.</p>
       <table>
         <thead><tr><th>Volunteer</th><th>Shift</th><th>Outcome</th><th>Minutes</th><th>Why</th></tr></thead>
         <tbody>

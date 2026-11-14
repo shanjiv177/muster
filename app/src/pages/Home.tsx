@@ -45,7 +45,7 @@ function Timecard({ d }: { d: Awaited<ReturnType<typeof load>> | undefined }) {
         <div className="tc-sign">Approved</div>
         {c && <div className="stamp">PAID BY THE DAO<small>proposal #{c.o.proposal_id}</small></div>}
       </figure>
-      {c && <p className="tc-source">A real shift on NEAR testnet, read live. Approved by {approvedBy}. <Link to={`/v/${c.o.account}`}>See the certificate</Link></p>}
+      {c && <p className="tc-source">Live from testnet, approved by {approvedBy}. <Link to={`/v/${c.o.account}`}>View certificate</Link></p>}
     </>
   );
 }
@@ -53,17 +53,19 @@ function Timecard({ d }: { d: Awaited<ReturnType<typeof load>> | undefined }) {
 function ShiftRow({ c }: { c: Campaign }) {
   const t = c.terms!;
   const open = Date.now() / 1000 < t.end;
-  const when = new Date(t.start * 1000).toLocaleString([], { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+  const d = new Date(t.start * 1000);
   return (
-    <div className="shift">
-      <div>
-        <h3><Link to={`/c/${c.id}`}>{c.title}</Link></h3>
-        <div className="meta">{c.place}, {when}. {c.times - c.claims} of {c.times} places left, {nearStr(c.amount)} NEAR stipend.</div>
+    <Link className={`shift${open ? "" : " past"}`} to={`/c/${c.id}`}>
+      <div className="when"><b>{d.toLocaleDateString([], { day: "numeric" })}</b><span>{d.toLocaleDateString([], { month: "short" })}</span></div>
+      <div className="what">
+        <h3>{c.title}</h3>
+        <div className="meta">{d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}, {c.place}</div>
       </div>
-      <div className="row">
-        {open ? <Link className="btn sm" to={`/c/${c.id}`}>RSVP</Link> : <span className="pill">Ended</span>}
+      <div className="tags">
+        <span className="pill">{nearStr(c.amount)} NEAR</span>
+        {open ? <span className="pill ok">{c.times - c.claims} places</span> : <span className="pill">Ended</span>}
       </div>
-    </div>
+    </Link>
   );
 }
 
@@ -79,12 +81,10 @@ export default function Home() {
       <section className="hero">
         <div>
           <h1>Volunteer hours you can prove.</h1>
-          <p className="lead">
-            RSVP with a small refundable bond. An organiser checks you in and out. Your community's DAO pays the shift and writes the hours to a record anyone can check. If you don't turn up, the bond stays with the community.
-          </p>
+          <p className="lead">RSVP with a refundable bond. Show up, get paid. Your hours live on chain.</p>
           <div className="row">
-            <a className="btn primary" href="#shifts">Find a shift</a>
-            <Link className="btn ghost" to="/proof">See the proof</Link>
+            <a className="btn primary lg" href="#shifts">Find a shift</a>
+            <Link className="btn ghost lg" to="/proof">How we prove it</Link>
           </div>
         </div>
         <div style={{ display: "grid" }}>
@@ -94,44 +94,53 @@ export default function Home() {
 
       <Err e={error} />
 
-      <h2 style={{ marginTop: 0 }}>How a shift works</h2>
-      <ol className="how">
-        <li><span className="num">1</span><h3>RSVP once</h3><p>One transaction locks a {d ? nearStr(d.bond, 1) : "0.5"} NEAR bond and files your payout claim. On the day you just show a QR code.</p></li>
-        <li><span className="num">2</span><h3>Get checked in and out</h3><p>The organiser scans you on arrival and departure. The minutes between the two scans are your hours.</p></li>
-        <li><span className="num">3</span><h3>The DAO settles</h3><p>A rules contract with no owner reads the attendance and votes on your claim. Nobody can quietly change the rules.</p></li>
-      </ol>
+      <section className="block">
+        <h2>How it works</h2>
+        <ol className="how">
+          <li><span className="num">1</span><h3>RSVP</h3><p>Lock a {d ? nearStr(d.bond, 1) : "0.5"} NEAR bond.</p></li>
+          <li><span className="num">2</span><h3>Show up</h3><p>Get scanned in and out.</p></li>
+          <li><span className="num">3</span><h3>Get paid</h3><p>The DAO settles, on chain.</p></li>
+        </ol>
+      </section>
 
-      <h2>Three ways a shift ends</h2>
-      <div className="outcomes">
-        <div className="paid"><h3>You showed up</h3><p>Stipend paid and bond returned. After your first verified shift this happens automatically.</p></div>
-        <div><h3>It's your first shift</h3><p>One council member confirms it. Your record starts there.</p></div>
-        <div className="kept"><h3>You didn't show</h3><p>The rules contract removes your claim. The bond stays in the community's treasury.</p></div>
-      </div>
+      <section className="block">
+        <h2>Every RSVP ends one of three ways</h2>
+        <div className="outcomes">
+          <div className="paid"><span className="dot" /><h3>Showed up</h3><p>Stipend paid, bond back.</p></div>
+          <div><span className="dot" /><h3>First shift</h3><p>One council vote, then automatic.</p></div>
+          <div className="kept"><span className="dot" /><h3>No-show</h3><p>Bond stays with the community.</p></div>
+        </div>
+      </section>
 
-      <h2>So far, on testnet</h2>
-      <div className="figures">
-        <div><b>{d ? hours.toFixed(1) : "–"}</b><span>verified hours</span></div>
-        <div><b>{d?.shiftsPaid ?? "–"}</b><span>shifts paid</span></div>
-        <div><b>{d?.rsvps ?? "–"}</b><span>bonded RSVPs</span></div>
-        <div><b>{d ? nearStr(d.kept, 1) : "–"}</b><span>NEAR kept from no-shows</span></div>
-        <div><b>{d ? nearStr(d.treasury, 1) : "–"}</b><span>NEAR in the treasury</span></div>
-      </div>
-      <p className="small muted" style={{ marginTop: 14 }}>The demo shifts last a minute or two so the scripted run finishes quickly. <Link to="/activity">Every decision the rules contract made</Link>.</p>
+      <section className="block">
+        <h2>On testnet so far</h2>
+        <div className="figures">
+          <div><b>{d ? hours.toFixed(1) : "–"}</b><span>verified hours</span></div>
+          <div><b>{d?.shiftsPaid ?? "–"}</b><span>shifts paid</span></div>
+          <div><b>{d?.rsvps ?? "–"}</b><span>bonded RSVPs</span></div>
+          <div><b>{d ? nearStr(d.kept, 1) : "–"}</b><span>NEAR kept from no-shows</span></div>
+        </div>
+        <p className="footnote">Demo shifts are a minute long. <Link to="/activity">See every decision</Link></p>
+      </section>
 
-      <h2 id="shifts">Shifts</h2>
-      <div className="shifts">
-        {!d && <p className="muted">Reading shifts from testnet…</p>}
-        {d && !open.length && <p className="muted">No open shifts right now. Organisers can propose one below.</p>}
-        {open.map((c) => <ShiftRow key={c.id} c={c} />)}
-      </div>
-      {!!past.length && (
-        <>
-          <h3 style={{ marginTop: 36 }}>Past shifts</h3>
-          <div className="shifts">{(allPast ? past : past.slice(0, 3)).map((c) => <ShiftRow key={c.id} c={c} />)}</div>
-          {past.length > 3 && !allPast && <button className="btn ghost sm more" onClick={() => setAllPast(true)}>Show all {past.length} past shifts</button>}
-        </>
-      )}
-      <p className="small muted">Organising one? <Link to="/organiser/new">Propose a shift</Link> to the council.</p>
+      <section className="block" id="shifts">
+        <div className="row spread">
+          <h2>Shifts</h2>
+          <Link className="btn ghost sm" to="/organiser/new">Propose a shift</Link>
+        </div>
+        <div className="shifts">
+          {!d && <p className="muted">Loading shifts…</p>}
+          {d && !open.length && <p className="muted">No open shifts right now.</p>}
+          {open.map((c) => <ShiftRow key={c.id} c={c} />)}
+        </div>
+        {!!past.length && (
+          <>
+            <h3 className="sub">Past</h3>
+            <div className="shifts">{(allPast ? past : past.slice(0, 3)).map((c) => <ShiftRow key={c.id} c={c} />)}</div>
+            {past.length > 3 && !allPast && <button className="btn ghost sm more" onClick={() => setAllPast(true)}>Show all {past.length}</button>}
+          </>
+        )}
+      </section>
     </>
   );
 }

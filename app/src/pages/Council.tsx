@@ -46,7 +46,7 @@ export default function Council() {
   return (
     <>
       <h1>Council</h1>
-      <p className="lead">The rules contract settles trusted volunteers and no-shows by itself. What's left for the council is a volunteer's first shift and anything unusual.</p>
+      <p className="lead">First shifts and anything unusual. The rules contract handles the rest.</p>
       {!w.accountId && <button className="btn" onClick={() => w.modal?.show()}>Sign in as council</button>}
       {w.accountId && !isCouncil && <div className="notice"><span className="mono">{w.accountId}</span> isn't on the council. You can still ask the rules contract to settle a proposal: anyone can.</div>}
       {msg && <div className={`notice ${msg.ok ? "ok" : "bad"}`}>{msg.text} {msg.hash && <a href={txLink(msg.hash)} target="_blank" rel="noreferrer">tx</a>}</div>}
@@ -83,7 +83,7 @@ export default function Council() {
           </tbody>
         </table>
       </div>
-      <p className="small muted">There's no Reject button on purpose. In Sputnik, Reject refunds the bond and only Remove keeps it (<a href="https://github.com/shanjiv177/muster/blob/main/docs/sputnik-findings.md#2-only-voteremove-forfeits-the-bond">tested on testnet</a>).</p>
+      <p className="small muted" style={{ marginTop: 20 }}>No Reject button: in Sputnik a reject refunds the bond (<a href="https://github.com/shanjiv177/muster/blob/main/docs/sputnik-findings.md#2-only-voteremove-forfeits-the-bond">why</a>).</p>
 
       {!!approvedUncredited.length && (
         <>

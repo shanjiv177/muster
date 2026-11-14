@@ -49,8 +49,8 @@ export default function NewCampaign() {
 
   return (
     <>
-      <h1>New campaign</h1>
-      <p className="lead">An organiser proposes a shift as a DAO bounty. The council approves the terms; after that, nobody can change them without another vote.</p>
+      <h1>Propose a shift</h1>
+      <p className="lead">The council approves it. Then the terms are locked.</p>
       <div className="grid wide">
         <div className="card">
           <label>Title</label><input value={f.title} onChange={set("title")} placeholder="Juhu Beach cleanup" />
@@ -59,7 +59,7 @@ export default function NewCampaign() {
           <textarea rows={4} value={about} onChange={(e) => setAbout(e.target.value)} placeholder="What volunteers will do, what to bring, where to meet." />
           <label>Cover photo (optional, up to 2 MB)</label>
           <input type="file" accept="image/jpeg,image/png,image/webp" onChange={(e) => setCover(e.target.files?.[0] ?? null)} />
-          <p className="small muted">The details and photo are stored on IPFS, and the bounty records their link. Uploads are signed with your organiser check-in key.</p>
+          <p className="small muted">Stored on IPFS.</p>
           <label>Starts</label><input type="datetime-local" value={f.start} onChange={set("start")} />
           <div className="row">
             <div style={{ flex: 1 }}><label>Length (hours)</label><input type="number" min={0.25} step={0.25} value={f.hours} onChange={set("hours")} /></div>

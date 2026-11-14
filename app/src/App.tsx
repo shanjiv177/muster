@@ -54,7 +54,12 @@ function Shell() {
         </Routes>
       </main>
       <footer>
-        Run by the community DAO <a href={addrLink(DEP.dao)}>{DEP.dao}</a> (stock Sputnik v2) and the rules contract <a href={addrLink(DEP.impactTier)}>{DEP.impactTier}</a>, which has no keys. <a href="https://github.com/shanjiv177/muster">Source on GitHub</a>.
+        <span>Muster</span>
+        <nav>
+          <a href={addrLink(DEP.dao)}>DAO</a>
+          <a href={addrLink(DEP.impactTier)}>Rules contract</a>
+          <a href="https://github.com/shanjiv177/muster">GitHub</a>
+        </nav>
       </footer>
     </>
   );
