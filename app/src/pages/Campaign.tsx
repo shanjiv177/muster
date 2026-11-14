@@ -4,6 +4,8 @@ import QRCode from "qrcode";
 import { DEP, attendanceOf, bountyDone, campaigns, fmtTime, minutesOf, nearStr, outcomes, policy, proposals, txLink } from "../chain";
 import { outcomeError, outcomeHash, useWallet, walletCall } from "../wallet";
 import { Err, Loading, StatusPill, useAsync } from "../ui";
+import DoorScan from "../DoorScan";
+import { fetchMeta, gatewayUrl, metaUri } from "../ipfs";
 
 const NS = 1_000_000_000n;
 
@@ -28,12 +30,14 @@ async function load(id: number, me: string | null) {
   const [camps, props, pol, outs] = await Promise.all([campaigns(), proposals(), policy(), outcomes()]);
   const c = camps.find((x) => x.id === id);
   if (!c) throw new Error(`No bounty #${id} in ${DEP.dao}`);
+  const uri = metaUri(c.description);
+  const meta = uri ? await fetchMeta(uri) : null;
   const rsvps = props.filter((p) => bountyDone(p)?.bounty_id === id);
   const rows = await Promise.all(rsvps.map(async (p) => ({ p, att: await attendanceOf(id, bountyDone(p)!.receiver_id) })));
   const removed = outs.filter((o) => o.bounty_id === id && o.outcome === "removed");
   const mine = me ? rows.find((r) => r.p.proposer === me && bountyDone(r.p)!.receiver_id === me) : undefined;
   const myRemoved = me ? removed.find((o) => o.account === me) : undefined;
-  return { c, rows, removed, bond: BigInt(pol.bounty_bond), proposalBond: BigInt(pol.proposal_bond), mine, myRemoved };
+  return { meta, uri, c, rows, removed, bond: BigInt(pol.bounty_bond), proposalBond: BigInt(pol.proposal_bond), mine, myRemoved };
 }
 
 export default function CampaignPage() {
@@ -78,6 +82,9 @@ export default function CampaignPage() {
       <Link className="back" to="/">All shifts</Link>
       <h1>{c.title}</h1>
       <p className="lead">{c.place}{t && <>, {fmtTime(t.start)} to {fmtTime(t.end)}</>}</p>
+      {d.meta?.cover && <img className="cover" src={gatewayUrl(d.meta.cover)} alt={`Cover photo for ${c.title}`} />}
+      {d.meta?.about && <p style={{ whiteSpace: "pre-line", marginBottom: 28 }}>{d.meta.about}</p>}
+      {d.uri && !d.meta && <p className="small muted">The shift details on IPFS ({d.uri}) haven't loaded yet.</p>}
       <div className="grid wide">
         <div className="card">
           <h3>Terms approved by the DAO council</h3>
@@ -88,6 +95,7 @@ export default function CampaignPage() {
             {t && <tr><td>No-show after</td><td>{fmtTime(t.end + t.grace_min * 60)} (end + {t.grace_min} min grace)</td></tr>}
             <tr><td>Places</td><td>{c.claims} of {c.times} held</td></tr>
           </tbody></table>
+          {d.uri && <p className="small muted">Details and photo: <a href={gatewayUrl(d.uri)} target="_blank" rel="noreferrer">{d.uri}</a></p>}
           <p className="small muted">These terms are the last line of bounty #{c.id}'s description: <code>{c.description.split("\n").pop()}</code></p>
         </div>
 
@@ -113,7 +121,16 @@ export default function CampaignPage() {
         </div>
       </div>
 
-      {w.accountId && d.mine && d.mine.p.status === "InProgress" && <div style={{ marginTop: 14 }}><MyQr bountyId={id} account={w.accountId} /></div>}
+      {w.accountId && d.mine && d.mine.p.status === "InProgress" && (
+        <div className="grid wide" style={{ marginTop: 20 }}>
+          <MyQr bountyId={id} account={w.accountId} />
+          <div className="card">
+            <h3>Or check yourself in</h3>
+            <p className="small muted">If the organiser has a door screen up, scan its code when you arrive and again when you leave. Your wallet asks you to confirm each one.</p>
+            <DoorScan bountyId={id} onDone={reload} />
+          </div>
+        </div>
+      )}
 
       <h2>RSVPs</h2>
       <div className="card" style={{ overflowX: "auto" }}>

@@ -70,7 +70,7 @@ export async function scopedKeyActive(account: string): Promise<boolean> {
   try {
     const ak: any = await provider.viewAccessKey({ accountId: account, publicKey: KeyPair.fromString(k).getPublicKey().toString() } as any);
     const fc = ak.permission?.FunctionCall;
-    return !!fc && fc.receiver_id === DEP.impactTier;
+    return !!fc && fc.receiver_id === DEP.impactTier && fc.method_names.includes("set_door_key");
   } catch {
     return false;
   }
@@ -84,7 +84,7 @@ export async function addScopedKey(w: WalletCtx) {
   const wallet = await w.selector.wallet();
   const act = actionCreators.addKey(
     PublicKey.fromString(kp.getPublicKey().toString()),
-    actionCreators.functionCallAccessKey(DEP.impactTier, ["attest"], 250_000_000_000_000_000_000_000n),
+    actionCreators.functionCallAccessKey(DEP.impactTier, ["attest", "set_door_key"], 250_000_000_000_000_000_000_000n),
   );
   return wallet.signAndSendTransaction({ receiverId: w.accountId, actions: [act as any] });
 }
@@ -94,10 +94,15 @@ export async function addScopedKey(w: WalletCtx) {
  * NEP-366 delegate action and the relayer pays gas; otherwise it sends a normal transaction.
  */
 export async function attestWithScopedKey(organiser: string, bountyId: number, volunteer: string, kind: "In" | "Out") {
+  return scopedCall(organiser, "attest", { bounty_id: bountyId, volunteer, kind });
+}
+
+/** Calls an impact-tier method with the organiser's scoped key, through the relayer when configured. */
+export async function scopedCall(organiser: string, method: "attest" | "set_door_key", args: object) {
   const key = scopedKey(organiser);
   if (!key) throw new Error("No check-in key on this device");
   const acct = new Account(organiser, provider, key);
-  const act = najActions.functionCall("attest", { bounty_id: bountyId, volunteer, kind }, 60n * 10n ** 12n, 0n);
+  const act = najActions.functionCall(method, args, 60n * 10n ** 12n, 0n);
   if (RELAYER_URL) {
     const { signedDelegate } = await acct.createSignedMetaTransaction({ receiverId: DEP.impactTier, actions: [act], blockHeightTtl: 120 } as any);
     const b64 = btoa(String.fromCharCode(...encodeSignedDelegate(signedDelegate)));

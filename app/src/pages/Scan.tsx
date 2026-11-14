@@ -75,7 +75,7 @@ export default function Scan() {
       {me && d.isOrganiser && !d.keyOk && (
         <div className="card">
           <h3>One-time setup: a check-in key for this phone</h3>
-          <p className="small">Muster makes a key in this browser and asks your wallet to add it to <span className="mono">{me}</span> as a <b>FunctionCall access key</b>. It can only call <code>attest</code> on <span className="mono">{DEP.impactTier}</span>, so it can't move money. After this, scanning needs no wallet pop-ups{RELAYER_URL ? " and no gas: the relayer pays" : ""}.</p>
+          <p className="small">Muster makes a key in this browser and asks your wallet to add it to <span className="mono">{me}</span> as a <b>FunctionCall access key</b>. It can only call <code>attest</code> and <code>set_door_key</code> on <span className="mono">{DEP.impactTier}</span>, so it can't move money. After this, scanning needs no wallet pop-ups{RELAYER_URL ? " and no gas: the relayer pays" : ""}.</p>
           <button className="btn" onClick={async () => { await addScopedKey(w); reload(); }}>Add check-in key</button>
         </div>
       )}
@@ -105,7 +105,7 @@ export default function Scan() {
                 {l.at}, {l.who}: {l.text} {l.hash && <a href={txLink(l.hash)} target="_blank" rel="noreferrer">tx</a>}
               </div>
             ))}
-            <p className="small muted">{d.rsvps.length} open RSVPs on this shift.</p>
+            <p className="small muted">{d.rsvps.length} open RSVPs on this shift. For a busy entrance, put up a <Link to={`/organiser/door/${id}`}>rotating door code</Link> and let volunteers check themselves in.</p>
           </div>
         </div>
       )}

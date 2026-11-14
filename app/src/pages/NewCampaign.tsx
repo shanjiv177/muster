@@ -2,6 +2,7 @@ import { useState } from "react";
 import { DEP, organisersOf, policy, toYocto, txLink } from "../chain";
 import { outcomeError, outcomeHash, useWallet, walletCall } from "../wallet";
 import { useAsync } from "../ui";
+import { pin } from "../ipfs";
 
 const local = (d: Date) => new Date(d.getTime() - d.getTimezoneOffset() * 60_000).toISOString().slice(0, 16);
 
@@ -10,22 +11,40 @@ export default function NewCampaign() {
   const pol = useAsync(policy);
   const soon = new Date(Date.now() + 86_400_000);
   const [f, setF] = useState({ title: "", place: "", start: local(soon), hours: 3, min: 90, grace: 30, slots: 20, stipend: 0.1 });
+  const [about, setAbout] = useState("");
+  const [cover, setCover] = useState<File | null>(null);
+  const [step, setStep] = useState("");
   const [msg, setMsg] = useState<{ ok: boolean; text: string; hash?: string } | null>(null);
   const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement>) => setF({ ...f, [k]: e.target.type === "number" ? Number(e.target.value) : e.target.value });
 
   const start = Math.floor(new Date(f.start).getTime() / 1000);
   const terms = { start, end: start + Math.round(f.hours * 3600), min_minutes: f.min, grace_min: f.grace };
-  const description = `${f.title}\n${f.place} · ${new Date(start * 1000).toISOString().replace("T", " ").slice(0, 16)} UTC\nMUSTER ${JSON.stringify(terms)}`;
+  const head = `${f.title}\n${f.place} · ${new Date(start * 1000).toISOString().replace("T", " ").slice(0, 16)} UTC`;
+  const describe = (meta?: string) => `${head}${meta ? `\nMETA ${meta}` : ""}\nMUSTER ${JSON.stringify(terms)}`;
+  const description = describe(about || cover ? "ipfs://<pinned when you propose>" : undefined);
   const canPropose = !!w.accountId && !!pol.data && (organisersOf(pol.data).includes(w.accountId) || (pol.data.roles.find((r: any) => r.name === "council")?.kind?.Group ?? []).includes(w.accountId));
 
   async function submit() {
     setMsg(null);
     try {
-      const bounty = { description, token: "", amount: toYocto(f.stipend).toString(), times: f.slots, max_deadline: (14n * 86_400n * 1_000_000_000n).toString() };
+      let meta: string | undefined;
+      if (about || cover) {
+        let coverUri: string | undefined;
+        if (cover) {
+          setStep("Pinning the cover photo to IPFS…");
+          coverUri = await pin(w.accountId!, cover.name, cover.type, new Uint8Array(await cover.arrayBuffer()));
+        }
+        setStep("Pinning the campaign details to IPFS…");
+        const json = new TextEncoder().encode(JSON.stringify({ title: f.title, place: f.place, about, cover: coverUri }));
+        meta = await pin(w.accountId!, "campaign.json", "application/json", json);
+      }
+      setStep("Waiting for your wallet…");
+      const bounty = { description: describe(meta), token: "", amount: toYocto(f.stipend).toString(), times: f.slots, max_deadline: (14n * 86_400n * 1_000_000_000n).toString() };
       const out = await walletCall(w, DEP.dao, [{ method: "add_proposal", args: { proposal: { description: `Campaign: ${f.title}`, kind: { AddBounty: { bounty } } } }, tgas: 100, deposit: BigInt(pol.data.proposal_bond) }]);
       const err = outcomeError(out);
+      setStep("");
       setMsg(err ? { ok: false, text: err } : { ok: true, text: "Proposed. It goes live once a council majority approves it on the Council page.", hash: outcomeHash(out) });
-    } catch (e: any) { setMsg({ ok: false, text: String(e?.message ?? e) }); }
+    } catch (e: any) { setStep(""); setMsg({ ok: false, text: String(e?.message ?? e) }); }
   }
 
   return (
@@ -36,6 +55,11 @@ export default function NewCampaign() {
         <div className="card">
           <label>Title</label><input value={f.title} onChange={set("title")} placeholder="Juhu Beach cleanup" />
           <label>Place</label><input value={f.place} onChange={set("place")} placeholder="Juhu Beach, Mumbai" />
+          <label>About the shift (optional)</label>
+          <textarea rows={4} value={about} onChange={(e) => setAbout(e.target.value)} placeholder="What volunteers will do, what to bring, where to meet." />
+          <label>Cover photo (optional, up to 2 MB)</label>
+          <input type="file" accept="image/jpeg,image/png,image/webp" onChange={(e) => setCover(e.target.files?.[0] ?? null)} />
+          <p className="small muted">The details and photo are stored on IPFS, and the bounty records their link. Uploads are signed with your organiser check-in key.</p>
           <label>Starts</label><input type="datetime-local" value={f.start} onChange={set("start")} />
           <div className="row">
             <div style={{ flex: 1 }}><label>Length (hours)</label><input type="number" min={0.25} step={0.25} value={f.hours} onChange={set("hours")} /></div>
@@ -51,6 +75,7 @@ export default function NewCampaign() {
               : <button className="btn" disabled={!canPropose || !f.title} onClick={submit}>Propose campaign</button>}
             {w.accountId && pol.data && !canPropose && <div className="notice small">Only accounts in the DAO's organiser or council role can propose campaigns.</div>}
           </div>
+          {step && <p className="small muted">{step}</p>}
           {msg && <div className={`notice ${msg.ok ? "ok" : "bad"}`}>{msg.text} {msg.hash && <a href={txLink(msg.hash)} target="_blank" rel="noreferrer">tx</a>}</div>}
         </div>
         <div className="card">

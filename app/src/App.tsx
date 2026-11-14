@@ -4,6 +4,7 @@ import Home from "./pages/Home";
 import Activity from "./pages/Activity";
 import CampaignPage from "./pages/Campaign";
 import Scan from "./pages/Scan";
+import Door from "./pages/Door";
 import Council from "./pages/Council";
 import Certificate from "./pages/Certificate";
 import Proof from "./pages/Proof";
@@ -45,6 +46,7 @@ function Shell() {
           <Route path="/activity" element={<Activity />} />
           <Route path="/c/:id" element={<CampaignPage />} />
           <Route path="/organiser/scan/:id" element={<Scan />} />
+          <Route path="/organiser/door/:id" element={<Door />} />
           <Route path="/organiser/new" element={<NewCampaign />} />
           <Route path="/council" element={<Council />} />
           <Route path="/v/:account" element={<Certificate />} />
