@@ -24,3 +24,13 @@ curl localhost:8787/health
 `POST /relay {"signedDelegate": "<base64 borsh SignedDelegate>"}` returns `{ok, hash, link, error}`.
 
 To host it, set `RELAYER_ACCOUNT`, `RELAYER_PRIVATE_KEY`, `PORT`, and `ALLOW_ORIGIN` (your app's origin). Then build the app with `VITE_RELAYER_URL` set to the relayer's URL.
+
+## Hosted instance
+
+The relayer runs at `https://rupee-rail.indiasouthcentral.cloudapp.azure.com/muster-relay/` (try `/health`). It is a separate service on a shared VM:
+- systemd unit `muster-relayer`, running as user `muster`;
+- its own Node in `/opt/muster/node`;
+- secrets in `/etc/muster/relayer.env`;
+- a Caddy route on that host (`deploy/`).
+
+To update it, run `RELAYER_HOST=user@host relayer/deploy/deploy.sh`.

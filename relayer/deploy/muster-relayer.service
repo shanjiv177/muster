@@ -1,0 +1,18 @@
+[Unit]
+Description=Muster NEP-366 relayer (testnet)
+After=network-online.target
+
+[Service]
+User=muster
+WorkingDirectory=/opt/muster/app
+# RELAYER_ACCOUNT, RELAYER_PRIVATE_KEY, PORT=8794, ALLOW_ORIGIN, RATE_PER_HOUR. Mode 640 root:muster. Never committed.
+EnvironmentFile=/etc/muster/relayer.env
+ExecStart=/opt/muster/node/bin/node --import tsx relayer/src/server.ts
+Restart=on-failure
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

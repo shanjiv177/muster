@@ -5,12 +5,12 @@
 Built at NEAR HACKATHON for the `social` track. Everything below runs on **NEAR testnet** today:
 - Community DAO: [`muster-juhu.sputnikv2.testnet`](https://testnet.nearblocks.io/address/muster-juhu.sputnikv2.testnet). It is stock Sputnik v2 from the `sputnikv2.testnet` factory, with factory auto-update turned off.
 - Rules contract: [`v1.muster-tier.testnet`](https://testnet.nearblocks.io/address/v1.muster-tier.testnet), Rust, with zero access keys.
-- App: React, reading the chain directly with no backend.
-- NEP-366 relayer: pays gas for check-ins, and never for bonds.
+- App: **https://shanjiv177.github.io/muster/**. React, reading the chain directly with no backend.
+- NEP-366 relayer: **https://rupee-rail.indiasouthcentral.cloudapp.azure.com/muster-relay/health**. It pays gas for check-ins, and never for bonds.
 
 | For a judge, in 2 minutes | |
 |---|---|
-| See it without a wallet | App → **Proof** page (live policy checks plus every transaction of the scripted run) |
+| See it without a wallet | [App → Proof](https://shanjiv177.github.io/muster/#/proof): live policy checks, plus every transaction of the scripted run |
 | Re-check the chain from a clone | `npm ci && npm run judge` (read-only, no keys) |
 | Rebuild one volunteer's hours from chain data | `npm run verify -- rmwg629bw.muster-vol-a.testnet` |
 | Contract tests | `cd contracts/impact-tier && cargo test` (34 tests) |

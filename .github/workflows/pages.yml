@@ -29,7 +29,7 @@ jobs:
       - run: npm run build
         working-directory: app
         env:
-          VITE_RELAYER_URL: ${{ vars.RELAYER_URL }}
+          VITE_RELAYER_URL: ${{ vars.RELAYER_URL || 'https://rupee-rail.indiasouthcentral.cloudapp.azure.com/muster-relay' }}
       - uses: actions/upload-pages-artifact@v3
         with:
           path: app/dist

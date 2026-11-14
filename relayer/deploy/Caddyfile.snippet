@@ -1,0 +1,4 @@
+# Inside the existing site block, before the catch-all `handle`:
+handle_path /muster-relay/* {
+	reverse_proxy 127.0.0.1:8794
+}
