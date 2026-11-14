@@ -88,7 +88,7 @@ To create your own community from scratch, you need testnet accounts in `~/.near
 | Organiser check-in | **FunctionCall access key** limited to `attest`, plus a **NEP-366** relayer |
 | Accounts | Named accounts and sub-accounts. The rules contract is versioned (`v1` → `v2.muster-tier.testnet`), and the DAO voted the `tier` role over to v2 ([tx](https://testnet.nearblocks.io/txns/5u9oysVmmSEcEi32fKH6CbpXU9JAx62Ya9k9iEKGivCJ)) |
 | Self check-in | `env::ed25519_verify` on a rotating door QR: the organiser's screen signs `muster-door:<contract>:<shift>:<30 s slot>:<In\|Out>`, and codes older than 2 minutes are refused |
-| Campaign details | IPFS (pinned through the relayer, organisers only, uploads signed with their check-in key). The bounty records `META ipfs://<cid>` |
+| Campaign details | IPFS, pinned through the relayer to Pinata. Only organisers can pin, and uploads are signed with their check-in key. The bounty records `META ipfs://<cid>`. Example: [shift 12](https://shanjiv177.github.io/muster/#/c/12), whose details are at [`bafkreidjxd…`](https://gateway.pinata.cloud/ipfs/bafkreidjxd7a7wd6gy5jqq35enqy75nhboahfaycr54x7yvrr4eh4l5up4) |
 
 ### Track fit (social)
 

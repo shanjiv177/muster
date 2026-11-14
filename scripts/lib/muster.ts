@@ -6,9 +6,9 @@ import { loadNamedKey, type MusterConfig } from "./config.js";
 
 export interface Terms { start: number; end: number; min_minutes: number; grace_min: number }
 
-export function describe(title: string, place: string, t: Terms): string {
+export function describe(title: string, place: string, t: Terms, meta?: string): string {
   const when = new Date(t.start * 1000).toISOString().replace("T", " ").slice(0, 16) + " UTC";
-  return `${title}\n${place} · ${when}\nMUSTER ${JSON.stringify(t)}`;
+  return `${title}\n${place} · ${when}${meta ? `\nMETA ${meta}` : ""}\nMUSTER ${JSON.stringify(t)}`;
 }
 
 export function parseTerms(description: string): Terms | null {
@@ -18,9 +18,9 @@ export function parseTerms(description: string): Terms | null {
 }
 
 /** Organiser files AddBounty with MUSTER terms; both council members approve. Returns the bounty id. */
-export async function createCampaign(cfg: MusterConfig, o: { title: string; place: string; terms: Terms; slots: number; stipendNear: string }) {
+export async function createCampaign(cfg: MusterConfig, o: { title: string; place: string; terms: Terms; slots: number; stipendNear: string; meta?: string }) {
   const bounty = {
-    description: describe(o.title, o.place, o.terms),
+    description: describe(o.title, o.place, o.terms, o.meta),
     token: "",
     amount: near(o.stipendNear).toString(),
     times: o.slots,
