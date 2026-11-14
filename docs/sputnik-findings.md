@@ -47,3 +47,17 @@ Remove does not subtract the bond from `locked_amount`. `get_available_amount` t
 ## 5. Factory auto-update can be turned off by the DAO
 
 A new DAO starts with `get_factory_info` = `{"factory_id":"sputnikv2.testnet","auto_update":true}`. A `FactoryInfoUpdate{auto_update: false}` proposal approved by the council changes it to `false` ([proposal](https://testnet.nearblocks.io/txns/BFAQdQMUSDjEaRyy6FtHrbA3k5HYHbQ6ZDRmgXuwZzuT), [final vote](https://testnet.nearblocks.io/txns/5VxBMqPuTT9omTbXyJeXEXPXvfx5bow2snr9xzYpUKqL)). After that, only the DAO's own vote can replace its code.
+
+## 6. NEP-366: the relayer pays deposits inside a delegate action
+
+The guest account signed a delegate action that transfers 0.2 NEAR, and `muster-relay` relayed it. Balances afterwards: sender **0**, relayer **−0.2003 NEAR**, receiver **+0.2** ([tx](https://testnet.nearblocks.io/txns/5ouxfnBcsZgb9xvestjthG5rPQiZ4Y22EocSZUGg6mV8); `scripts/probes/delegate-deposit.ts`).
+
+If a relayer forwarded an RSVP, the relayer would post the bond and a no-show would lose nothing. So Muster's relayer refuses any action with a deposit (`relayer/src/policy.ts`), and RSVPs stay wallet transactions.
+
+## 7. A FunctionCall access key can sign a delegate action
+
+The organiser's scoped key can only call impact-tier `attest`. It signed a delegate for `attest`, and the relayer submitted it. The organiser's balance didn't change; the relayer paid 0.0007 NEAR of gas ([tx](https://testnet.nearblocks.io/txns/8TRSZnA2zbzTDDH1nZTQT6Xmcx534e9VRMMkRA4e2gLy); `scripts/probes/relay-attest.ts`). Check-ins therefore need no wallet pop-up and no gas from the organiser.
+
+## 8. A double RSVP reverts by itself
+
+When a volunteer whose first claim on a bounty is already completed sends a second batched `bounty_claim` + `bounty_done`, `bounty_done` finds the first claim and panics with `ERR_BOUNTY_CLAIM_COMPLETED`. Both actions are in one receipt, so the whole transaction reverts and no second bond is taken (see `docs/testnet-run.md`, scenario E). Done-at-RSVP therefore gives one proposal per volunteer per shift without any extra code. impact-tier's duplicate rule is kept as defence in depth.

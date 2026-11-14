@@ -1,3 +1,5 @@
+> **Superseded.** The design that was built is [FINAL-PLAN.md](FINAL-PLAN.md), and the README describes what runs today. This file is kept for history.
+
 # Muster: build plan
 
 Muster runs volunteer campaigns on a community's own Sputnik DAO. A sponsor funds the DAO, an organiser posts a campaign, volunteers RSVP with a small bond, and checked-in volunteers are verified and paid by the DAO itself. No-shows lose their bond to the community's treasury.

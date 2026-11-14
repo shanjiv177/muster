@@ -13,7 +13,8 @@
     "judge": "tsx scripts/judge.ts",
     "relayer": "tsx relayer/src/server.ts",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "test:relayer": "tsx --test relayer/src/policy.test.ts"
+    "test:relayer": "tsx --test relayer/src/policy.test.ts",
+    "balances": "tsx scripts/balances.ts"
   },
   "dependencies": {
     "@near-js/crypto": "^2.5.1",

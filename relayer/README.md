@@ -1,13 +1,26 @@
 # relayer
 
-**Status: not started.**
+A NEP-366 meta-transaction relayer. It pays gas for organiser check-ins and other zero-deposit Muster calls.
 
-A NEP-366 meta-transaction relayer that pays gas for volunteers' signed delegate actions. It accepts only these calls on the configured community DAO:
+**It never relays an action with a deposit.** On testnet the relayer, not the sender, paid the 0.2 NEAR inside a delegate action (`docs/sputnik-findings.md` §6). If the relayer forwarded an RSVP, it would post the bond, and a no-show would lose nothing.
 
-- `bounty_claim`
-- `bounty_done`
-- `bounty_giveup`
+| Receiver | Methods relayed |
+|---|---|
+| impact-tier | `attest`, `settle`, `credit` |
+| community DAO | `bounty_giveup` |
 
-It never pays attached deposits. The RSVP bond must come from the volunteer, or a no-show would lose nothing (see [PLAN.md section 8](../PLAN.md#8-bond-policy)).
+Other rules:
+- Only function calls are relayed.
+- Gas is capped at 300 Tgas per action.
+- At most 4 actions per delegate.
+- 120 requests per sender per hour.
 
-Reference: https://docs.near.org/web3-apps/tutorials/meta-transactions
+```bash
+npm run relayer                      # :8787, signs as muster-relay.testnet from ~/.near-credentials
+npm run test:relayer                 # allowlist + rate-limit tests
+curl localhost:8787/health
+```
+
+`POST /relay {"signedDelegate": "<base64 borsh SignedDelegate>"}` returns `{ok, hash, link, error}`.
+
+To host it, set `RELAYER_ACCOUNT`, `RELAYER_PRIVATE_KEY`, `PORT`, and `ALLOW_ORIGIN` (your app's origin). Then build the app with `VITE_RELAYER_URL` set to the relayer's URL.
