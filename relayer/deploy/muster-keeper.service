@@ -1,0 +1,19 @@
+[Unit]
+Description=Muster keeper (testnet): settles shift proposals every minute
+After=network-online.target
+
+[Service]
+User=muster
+WorkingDirectory=/opt/muster/app
+# KEEPER_ACCOUNT, KEEPER_PRIVATE_KEY (FunctionCall key: impact-tier settle/credit only), KEEPER_LOOP_SECONDS
+EnvironmentFile=/etc/muster/keeper.env
+ExecStart=/opt/muster/node/bin/node --import tsx scripts/keeper.ts
+Restart=always
+RestartSec=30
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

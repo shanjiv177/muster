@@ -65,7 +65,7 @@ export function bountyDoneOf(p: any): { bounty_id: number; receiver_id: string }
 }
 
 /** One keeper pass: settle every open own-name BountyDone, credit council-approved ones. */
-export async function keeperPass(cfg: MusterConfig, quiet = false): Promise<{ id: number; action: string; r: TxResult }[]> {
+export async function keeperPass(cfg: MusterConfig, quiet = false, signer?: Account): Promise<{ id: number; action: string; r: TxResult }[]> {
   const done: { id: number; action: string; r: TxResult }[] = [];
   for (const p of await allProposals(cfg.dao)) {
     const bd = bountyDoneOf(p);
@@ -74,13 +74,13 @@ export async function keeperPass(cfg: MusterConfig, quiet = false): Promise<{ id
       // Skip proposals whose claim is gone (given up): there is nothing left to vote on.
       const claims = await view<any[]>(cfg.dao, "get_bounty_claims", { account_id: bd.receiver_id });
       if (!claims.some((c) => c.bounty_id === bd.bounty_id)) continue;
-      const r = await settle(cfg, p.id, bd.bounty_id, bd.receiver_id);
+      const r = await settle(cfg, p.id, bd.bounty_id, bd.receiver_id, signer);
       done.push({ id: p.id, action: "settle", r });
       if (!quiet) log(`settle #${p.id} (${bd.receiver_id}) -> ${JSON.stringify(r.value)}`, r);
     } else if (p.status === "Approved" && !(await view<boolean>(cfg.impactTier, "is_credited", { proposal_id: p.id }))) {
       const attended = await view<any>(cfg.impactTier, "attendance_of", { bounty_id: bd.bounty_id, account: bd.receiver_id });
       if (!attended.out_ns) continue;
-      const r = await credit(cfg, p.id, bd.bounty_id);
+      const r = await credit(cfg, p.id, bd.bounty_id, signer);
       done.push({ id: p.id, action: "credit", r });
       if (!quiet) log(`credit #${p.id} (${bd.receiver_id}) -> ${JSON.stringify(r.value)}`, r);
     }
