@@ -1,8 +1,8 @@
 {
   "_comment": "Example only. scripts/bootstrap.ts writes config/testnet.json (git-ignored) with real ids.",
   "network": "testnet",
-  "factory": "sputnik-v2.testnet",
-  "dao": "<community>.sputnik-v2.testnet",
+  "factory": "sputnikv2.testnet",
+  "dao": "<community>.sputnikv2.testnet",
   "impactTier": "tier.<organiser>.testnet",
   "token": "<test-usdc>.testnet",
   "policy": {

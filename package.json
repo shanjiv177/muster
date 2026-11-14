@@ -1,0 +1,25 @@
+{
+  "name": "muster",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "probe": "tsx scripts/probe.ts",
+    "bootstrap": "tsx scripts/bootstrap.ts",
+    "campaign": "tsx scripts/campaign.ts",
+    "simulate": "tsx scripts/simulate.ts",
+    "keeper": "tsx scripts/keeper.ts",
+    "verify": "tsx scripts/verify.ts",
+    "judge": "tsx scripts/judge.ts",
+    "relayer": "tsx relayer/src/server.ts",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "@near-js/crypto": "^2.5.1",
+    "near-api-js": "^7.2.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2"
+  }
+}

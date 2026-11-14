@@ -12,7 +12,7 @@ Source files:
 
 | Network | Factory | DAOs listed by `get_dao_list` on 2026-11-12 |
 |---|---|---|
-| testnet | `sputnik-v2.testnet` | 143 |
+| testnet | `sputnikv2.testnet` (current, default version [3,31]; `sputnik-v2.testnet` is an older deployment) | |
 | mainnet | `sputnik-dao.near` | 2,141 |
 
 ## Bounties
@@ -35,7 +35,7 @@ Source files:
 
 **Payout on approval** (`proposals.rs` 427–430 → `bounties.rs` 65–84): `internal_execute_bounty_payout(bounty_id, receiver_id, true)` removes the claim and pays `amount` of `token` to the receiver.
 
-**Bond return** (`proposals.rs` 339–349, `internal_return_bonds`): for a `BountyDone` proposal it transfers `policy.bounty_bond` to the proposal's proposer (the claimer), then returns the proposal bond. It is called when a proposal is approved (line 489). For a rejected proposal it is called when `return_bonds` is true (lines 505–509). Muster must confirm which rejection paths return the bond: rejected versus removed.
+**Bond return** (`proposals.rs` 339–349, `internal_return_bonds`): for a `BountyDone` proposal it transfers `policy.bounty_bond` to the proposal's proposer (the claimer), then returns the proposal bond. It is called when a proposal is approved (line 489). For a rejected proposal it is called when `return_bonds` is true (lines 505–509). Confirmed on testnet: Reject and finalised Expiry return the bond; only Remove keeps it. See [sputnik-findings.md](sputnik-findings.md).
 
 ## Proposals and voting
 
