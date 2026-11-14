@@ -21,7 +21,7 @@ use near_sdk::{
     PromiseResult,
 };
 
-use decide::{decide, organisers, parse_bounty, parse_proposal, Attendance, Context, Decision};
+use decide::{decide, has_claim, organisers, parse_bounty, parse_proposal, Attendance, Context, Decision};
 
 const GAS_VIEW: Gas = Gas::from_tgas(10);
 const GAS_ON_ATTEST: Gas = Gas::from_tgas(15);
@@ -36,6 +36,7 @@ trait SputnikDao {
     fn get_proposal(&self, id: u64) -> Value;
     fn get_bounty(&self, id: u64) -> Value;
     fn get_policy(&self) -> Value;
+    fn get_bounty_claims(&self, account_id: AccountId) -> Value;
     fn act_proposal(&mut self, id: u64, action: String, proposal: Value, memo: Option<String>);
 }
 
@@ -179,19 +180,21 @@ impl ImpactTier {
 
     // ---------- settlement ----------
 
-    /// Anyone may call. Reads the proposal, bounty and policy, then votes or waits.
-    pub fn settle(&mut self, proposal_id: u64, bounty_id: u64) -> Promise {
+    /// Anyone may call. Reads the proposal, bounty, policy and the volunteer's live claims in one
+    /// joint promise, then votes or waits. `account` is the proposal's receiver.
+    pub fn settle(&mut self, proposal_id: u64, bounty_id: u64, account: AccountId) -> Promise {
         let dao = || ext_dao::ext(self.dao.clone()).with_static_gas(GAS_VIEW);
         dao().get_proposal(proposal_id)
             .and(dao().get_bounty(bounty_id))
             .and(dao().get_policy())
-            .then(Self::ext(env::current_account_id()).with_static_gas(GAS_ON_SETTLE).on_settle(proposal_id, bounty_id))
+            .and(dao().get_bounty_claims(account.clone()))
+            .then(Self::ext(env::current_account_id()).with_static_gas(GAS_ON_SETTLE).on_settle(proposal_id, bounty_id, account))
     }
 
     #[private]
-    pub fn on_settle(&mut self, proposal_id: u64, bounty_id: u64) -> PromiseOrValue<Decision> {
-        let (Some(pv), Some(bv), Some(pol)) = (result_json(0), result_json(1), result_json(2)) else {
-            return PromiseOrValue::Value(Decision::Ignore { reason: "proposal, bounty or policy unavailable".into() });
+    pub fn on_settle(&mut self, proposal_id: u64, bounty_id: u64, account: AccountId) -> PromiseOrValue<Decision> {
+        let (Some(pv), Some(bv), Some(pol), Some(claims)) = (result_json(0), result_json(1), result_json(2), result_json(3)) else {
+            return PromiseOrValue::Value(Decision::Ignore { reason: "proposal, bounty, policy or claims unavailable".into() });
         };
         let (Some(p), Some(b)) = (parse_proposal(&pv), parse_bounty(&bv)) else {
             return PromiseOrValue::Value(Decision::Ignore { reason: "unreadable proposal or bounty".into() });
@@ -200,6 +203,9 @@ impl ImpactTier {
             Some((_, r)) => r.clone(),
             None => p.proposer.clone(),
         };
+        if receiver != account {
+            return PromiseOrValue::Value(Decision::Ignore { reason: "account is not the proposal's receiver".into() });
+        }
         let key = (bounty_id, receiver.clone());
         let att = self.attendance.get(&key).cloned().unwrap_or_default();
         let ctx = Context {
@@ -208,6 +214,7 @@ impl ImpactTier {
             auto_cap: self.auto_cap,
             record_shifts: self.records.get(&receiver).map(|r| r.shifts).unwrap_or(0),
             canonical: self.canonical.get(&key).copied(),
+            has_claim: has_claim(&claims, bounty_id),
         };
         let d = decide(proposal_id, bounty_id, &p, &b, &organisers(&pol), &att, &ctx);
         if !matches!(d, Decision::Ignore { .. }) && ctx.canonical.is_none() {

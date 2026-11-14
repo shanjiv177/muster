@@ -57,9 +57,17 @@ fn attend(c: &mut ImpactTier, vol: &str, in_s: u64, out_s: u64) {
     c.on_attest(7, acc(vol), Kind::Out, acc("org.testnet"), out_s * SEC);
 }
 
+fn claims(bounty_id: u64) -> Value {
+    json!([{"bounty_id": bounty_id, "start_time": "0", "deadline": "1", "completed": true}])
+}
+
 fn settle_value(c: &mut ImpactTier, prop: Value, now_s: u64) -> Option<Decision> {
-    env_at("tier.testnet", now_s, vec![ok(&prop), ok(&bounty()), ok(&policy())]);
-    match c.on_settle(3, 7) {
+    settle_with(c, prop, now_s, claims(7), "v.testnet")
+}
+
+fn settle_with(c: &mut ImpactTier, prop: Value, now_s: u64, cl: Value, account: &str) -> Option<Decision> {
+    env_at("tier.testnet", now_s, vec![ok(&prop), ok(&bounty()), ok(&policy()), ok(&cl)]);
+    match c.on_settle(3, 7, acc(account)) {
         PromiseOrValue::Value(d) => Some(d),
         PromiseOrValue::Promise(_) => None, // a vote was sent
     }
@@ -117,19 +125,29 @@ fn settle_sends_vote_for_trusted_attendee_and_waits_otherwise() {
 
     let mut c = contract(2);
     attend(&mut c, "w.testnet", 1000, 3000);
-    let d = settle_value(&mut c, proposal("w.testnet", "w.testnet", "InProgress"), 5000).unwrap();
+    let d = settle_with(&mut c, proposal("w.testnet", "w.testnet", "InProgress"), 5000, claims(7), "w.testnet").unwrap();
     assert!(matches!(d, Decision::Wait { .. }));
 }
 
 #[test]
 fn settle_ignores_spoof_and_unavailable_dao() {
     let mut c = contract(0);
-    let d = settle_value(&mut c, proposal("attacker.testnet", "v.testnet", "InProgress"), 99_999).unwrap();
+    let d = settle_with(&mut c, proposal("attacker.testnet", "v.testnet", "InProgress"), 99_999, claims(7), "v.testnet").unwrap();
     assert!(matches!(d, Decision::Ignore { .. }));
     assert_eq!(c.canonical_of(7, acc("v.testnet")), None);
 
-    env_at("tier.testnet", 5000, vec![PromiseResult::Failed, ok(&bounty()), ok(&policy())]);
-    assert!(matches!(c.on_settle(3, 7), PromiseOrValue::Value(Decision::Ignore { .. })));
+    env_at("tier.testnet", 5000, vec![PromiseResult::Failed, ok(&bounty()), ok(&policy()), ok(&claims(7))]);
+    assert!(matches!(c.on_settle(3, 7, acc("v.testnet")), PromiseOrValue::Value(Decision::Ignore { .. })));
+}
+
+#[test]
+fn settle_ignores_given_up_claims_and_wrong_account() {
+    let mut c = contract(0);
+    // Claims on another bounty only: given up here, so never vote (it would revert).
+    let d = settle_with(&mut c, proposal("v.testnet", "v.testnet", "InProgress"), 99_999, claims(8), "v.testnet").unwrap();
+    assert!(matches!(d, Decision::Ignore { .. }), "{d:?}");
+    let d = settle_with(&mut c, proposal("v.testnet", "v.testnet", "InProgress"), 99_999, claims(7), "w.testnet").unwrap();
+    assert!(matches!(d, Decision::Ignore { .. }), "{d:?}");
 }
 
 #[test]

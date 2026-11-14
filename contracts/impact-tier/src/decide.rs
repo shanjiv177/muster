@@ -64,6 +64,9 @@ pub struct Context {
     pub record_shifts: u32,
     /// The first proposal settled for this (bounty, volunteer), if any.
     pub canonical: Option<u64>,
+    /// The volunteer still holds a claim on this bounty in the DAO (`get_bounty_claims`).
+    /// False after a give-up or a settlement: voting would only revert.
+    pub has_claim: bool,
 }
 
 #[near(serializers = [json])]
@@ -105,6 +108,9 @@ pub fn decide(
     if &p.proposer != receiver {
         // Spoofed BountyDone: never vote on it (see docs/sputnik-findings.md §3).
         return Decision::Ignore { reason: s("proposer is not the receiver") };
+    }
+    if !ctx.has_claim {
+        return Decision::Ignore { reason: s("no live claim (given up or already settled)") };
     }
     if let Some(c) = ctx.canonical {
         if c != proposal_id {
@@ -158,6 +164,14 @@ pub fn parse_bounty(v: &Value) -> Option<BountyInfo> {
     Some(BountyInfo { description, amount: amount.0 })
 }
 
+/// Whether Sputnik `get_bounty_claims` JSON contains a claim on `bounty_id`.
+pub fn has_claim(claims: &Value, bounty_id: u64) -> bool {
+    claims
+        .as_array()
+        .map(|cs| cs.iter().any(|c| c.get("bounty_id").and_then(Value::as_u64) == Some(bounty_id)))
+        .unwrap_or(false)
+}
+
 /// Members of the `organiser` Group role in Sputnik `get_policy` JSON.
 pub fn organisers(policy: &Value) -> Vec<AccountId> {
     policy
@@ -208,7 +222,7 @@ mod tests {
     }
 
     fn ctx(now_s: u64, shifts: u32) -> Context {
-        Context { now_ns: now_s * SEC, trusted_after: 2, auto_cap: 1_000, record_shifts: shifts, canonical: None }
+        Context { now_ns: now_s * SEC, trusted_after: 2, auto_cap: 1_000, record_shifts: shifts, canonical: None, has_claim: true }
     }
 
     fn run(p: &ProposalInfo, b: &BountyInfo, a: &Attendance, c: &Context) -> Decision {
@@ -305,6 +319,14 @@ mod tests {
         c.canonical = Some(3);
         let d = run(&prop("v.testnet", "v.testnet", "InProgress"), &bounty(1), &attended(45, "org.testnet"), &c);
         assert_eq!(d, Decision::Approve { minutes: 45 });
+    }
+
+    #[test]
+    fn given_up_claim_is_left_alone() {
+        let mut c = ctx(1_000_000, 9);
+        c.has_claim = false;
+        let d = run(&prop("v.testnet", "v.testnet", "InProgress"), &bounty(1), &Attendance::default(), &c);
+        assert!(matches!(d, Decision::Ignore { .. }), "{d:?}");
     }
 
     #[test]
